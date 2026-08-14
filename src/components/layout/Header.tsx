@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Heart, Settings, Flame, Gamepad2, Sparkles, User } from 'lucide-react';
+import { Search, Heart, Flame, Gamepad2, Sparkles, User, Trophy } from 'lucide-react';
 import { storageService } from '../../services/StorageService';
 import { userService } from '../../services/UserService';
+import { progressionService } from '../../services/ProgressionService';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export const Header: React.FC = () => {
   const [favCount, setFavCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const profile = userService.getProfile();
+  const levelInfo = progressionService.getLevelInfo();
 
   useEffect(() => {
     const updateFavs = () => {
@@ -31,6 +33,7 @@ export const Header: React.FC = () => {
     { label: 'Home', path: '/', icon: Sparkles },
     { label: 'Games', path: '/games', icon: Gamepad2 },
     { label: 'Trending', path: '/trending', icon: Flame },
+    { label: 'Leaderboards', path: '/leaderboards', icon: Trophy },
     { label: 'Favorites', path: '/favorites', icon: Heart, badge: favCount },
   ];
 
@@ -61,7 +64,7 @@ export const Header: React.FC = () => {
         <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-sm relative">
           <input
             type="text"
-            placeholder="Search games, tags, categories..."
+            placeholder="Search 10+ games, tags, categories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-800 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30 transition-all"
@@ -107,18 +110,22 @@ export const Header: React.FC = () => {
             <Search className="w-5 h-5" />
           </Link>
 
-          {/* Profile / Settings Button */}
+          {/* Profile & XP Badge Button */}
           <Link
-            to="/settings"
+            to="/profile"
             className="flex items-center gap-2 p-2 sm:px-3 sm:py-2 text-slate-300 hover:text-white rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/30 active:scale-95 transition-all"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-slate-950 font-bold text-xs">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center text-slate-950 font-bold text-xs">
               <User className="w-3.5 h-3.5 text-slate-950" />
             </div>
-            <span className="hidden sm:inline-block text-xs font-semibold max-w-[100px] truncate text-slate-200">
-              {profile.username}
-            </span>
-            <Settings className="w-4 h-4 text-slate-400 hidden sm:inline-block" />
+            <div className="hidden sm:flex flex-col text-left">
+              <span className="text-xs font-extrabold text-white max-w-[90px] truncate leading-tight">
+                {profile.username}
+              </span>
+              <span className="text-[10px] font-bold text-cyan-400 leading-tight">
+                LVL {levelInfo.level}
+              </span>
+            </div>
           </Link>
         </div>
 

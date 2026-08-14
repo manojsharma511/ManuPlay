@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Gamepad2, Flame, Heart, Settings } from 'lucide-react';
+import { Home, Gamepad2, Flame, Heart, User } from 'lucide-react';
 import { storageService } from '../../services/StorageService';
 
 export const MobileBottomNav: React.FC = () => {
@@ -16,7 +16,6 @@ export const MobileBottomNav: React.FC = () => {
     return () => window.removeEventListener('storage', updateFavs);
   }, [location.pathname]);
 
-  // Hide bottom nav when inside game play mode
   if (location.pathname.endsWith('/play')) return null;
 
   const items = [
@@ -24,7 +23,7 @@ export const MobileBottomNav: React.FC = () => {
     { label: 'Games', path: '/games', icon: Gamepad2 },
     { label: 'Trending', path: '/trending', icon: Flame },
     { label: 'Favorites', path: '/favorites', icon: Heart, badge: favCount },
-    { label: 'Settings', path: '/settings', icon: Settings },
+    { label: 'Profile', path: '/profile', icon: User },
   ];
 
   return (

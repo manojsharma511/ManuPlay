@@ -25,10 +25,20 @@ interface PowerUp {
   type: 'triple' | 'shield';
 }
 
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  life: number;
+}
+
 export class SpaceShooterGame {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private animId: number | null = null;
+  private lastTime = 0;
 
   private onGameOver: (score: number) => void;
   private onScoreUpdate: (score: number) => void;
@@ -36,23 +46,23 @@ export class SpaceShooterGame {
   private isRunning = false;
   private isPaused = false;
 
-  // Player state
+  // Player State
   private shipX = 80;
   private shipY = 225;
   private shipRadius = 18;
   private hp = 100;
-  private shield = 0;
+  private shield = 50;
   private weaponType: 'single' | 'triple' = 'single';
   private lastFired = 0;
 
-  // Game state
+  // Game World State
   private score = 0;
   private level = 1;
   private enemies: EnemyShip[] = [];
   private bullets: StarBullet[] = [];
   private powerups: PowerUp[] = [];
   private stars: Array<{ x: number; y: number; speed: number; size: number }> = [];
-  private particles: Array<{ x: number; y: number; vx: number; vy: number; color: string; life: number }> = [];
+  private particles: Particle[] = [];
   private unsubscribeInput: (() => void) | null = null;
 
   constructor(
@@ -69,8 +79,10 @@ export class SpaceShooterGame {
     if (!this.ctx) return;
 
     this.resize();
+    window.addEventListener('resize', this.resize);
+
     this.shipX = 80;
-    this.shipY = canvas.height / 2;
+    this.shipY = this.logicalHeight / 2;
     this.hp = 100;
     this.shield = 50;
 
@@ -89,25 +101,86 @@ export class SpaceShooterGame {
     this.stars = [];
     for (let i = 0; i < 60; i++) {
       this.stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        speed: 1 + Math.random() * 4,
+        x: Math.random() * this.logicalWidth,
+        y: Math.random() * this.logicalHeight,
+        speed: 60 + Math.random() * 240,
         size: Math.random() * 2.5
       });
     }
 
+    this.setupTouchDrag();
+
     this.unsubscribeInput = inputService.subscribe(() => {});
     audioService.startSynthMusic('arcade');
-    this.loop();
+
+    this.lastTime = performance.now();
+    this.loop(this.lastTime);
   }
 
-  private resize() {
+  private resize = () => {
     if (!this.canvas) return;
     const parent = this.canvas.parentElement;
     if (parent) {
-      this.canvas.width = parent.clientWidth || 800;
-      this.canvas.height = parent.clientHeight || 450;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = parent.clientWidth || 800;
+      const height = parent.clientHeight || 450;
+
+      this.canvas.width = width * dpr;
+      this.canvas.height = height * dpr;
+      this.canvas.style.width = `${width}px`;
+      this.canvas.style.height = `${height}px`;
+
+      if (this.ctx) {
+        this.ctx.scale(dpr, dpr);
+      }
     }
+  };
+
+  private get logicalWidth(): number {
+    return this.canvas ? parseFloat(this.canvas.style.width) || this.canvas.width : 800;
+  }
+
+  private get logicalHeight(): number {
+    return this.canvas ? parseFloat(this.canvas.style.height) || this.canvas.height : 450;
+  }
+
+  private setupTouchDrag() {
+    if (!this.canvas) return;
+
+    let isDragging = false;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        isDragging = true;
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging || e.touches.length === 0) return;
+      const touchX = e.touches[0].clientX;
+      const touchY = e.touches[0].clientY;
+
+      const dx = touchX - lastTouchX;
+      const dy = touchY - lastTouchY;
+
+      this.shipX = Math.max(30, Math.min(this.logicalWidth / 2, this.shipX + dx));
+      this.shipY = Math.max(30, Math.min(this.logicalHeight - 30, this.shipY + dy));
+
+      lastTouchX = touchX;
+      lastTouchY = touchY;
+    };
+
+    const handleTouchEnd = () => {
+      isDragging = false;
+    };
+
+    this.canvas.addEventListener('touchstart', handleTouchStart, { passive: true });
+    this.canvas.addEventListener('touchmove', handleTouchMove, { passive: true });
+    this.canvas.addEventListener('touchend', handleTouchEnd);
   }
 
   public pause() {
@@ -118,78 +191,88 @@ export class SpaceShooterGame {
   public resume() {
     if (!this.isPaused) return;
     this.isPaused = false;
+    this.lastTime = performance.now();
     audioService.startSynthMusic('arcade');
-    this.loop();
+    this.loop(this.lastTime);
   }
 
   public destroy() {
     this.isRunning = false;
     if (this.animId) cancelAnimationFrame(this.animId);
     if (this.unsubscribeInput) this.unsubscribeInput();
+    window.removeEventListener('resize', this.resize);
     audioService.stopSynthMusic();
   }
 
-  private loop = () => {
+  private loop = (currentTime: number) => {
     if (!this.isRunning || this.isPaused) return;
 
-    this.update();
+    const dt = Math.min((currentTime - this.lastTime) / 1000, 0.05);
+    this.lastTime = currentTime;
+
+    this.update(dt);
     this.render();
 
     this.animId = requestAnimationFrame(this.loop);
   };
 
-  private update() {
-    if (!this.canvas) return;
+  private update(dt: number) {
     const input = inputService.getState();
 
-    // Move Ship
-    const spd = 6;
-    if (input.left) this.shipX = Math.max(30, this.shipX - spd);
-    if (input.right) this.shipX = Math.min(this.canvas.width / 2, this.shipX + spd);
-    if (input.up) this.shipY = Math.max(30, this.shipY - spd);
-    if (input.down) this.shipY = Math.min(this.canvas.height - 30, this.shipY + spd);
+    // Key Movement
+    const spd = 360;
+    if (input.left) this.shipX = Math.max(30, this.shipX - spd * dt);
+    if (input.right) this.shipX = Math.min(this.logicalWidth / 2, this.shipX + spd * dt);
+    if (input.up) this.shipY = Math.max(30, this.shipY - spd * dt);
+    if (input.down) this.shipY = Math.min(this.logicalHeight - 30, this.shipY + spd * dt);
+
+    if (input.joystick.active) {
+      this.shipX = Math.max(30, Math.min(this.logicalWidth / 2, this.shipX + input.joystick.x * spd * dt));
+      this.shipY = Math.max(30, Math.min(this.logicalHeight - 30, this.shipY + input.joystick.y * spd * dt));
+    }
 
     // Starfield scroll
     this.stars.forEach(s => {
-      s.x -= s.speed;
-      if (s.x < 0) s.x = this.canvas!.width;
+      s.x -= s.speed * dt;
+      if (s.x < 0) s.x = this.logicalWidth;
     });
 
-    // Fire Lasers
+    // Auto/Manual Laser Fire
     const now = Date.now();
-    if ((input.action1 || input.action2) && now - this.lastFired > 140) {
+    if (now - this.lastFired > 140) {
       this.lastFired = now;
       audioService.playLaser();
-      storageService.triggerHaptic('light');
 
+      const bSpd = 850;
       if (this.weaponType === 'single') {
-        this.bullets.push({ x: this.shipX + 20, y: this.shipY, vx: 14, vy: 0 });
+        this.bullets.push({ x: this.shipX + 20, y: this.shipY, vx: bSpd, vy: 0 });
       } else {
-        this.bullets.push({ x: this.shipX + 20, y: this.shipY - 10, vx: 14, vy: -2 });
-        this.bullets.push({ x: this.shipX + 20, y: this.shipY, vx: 14, vy: 0 });
-        this.bullets.push({ x: this.shipX + 20, y: this.shipY + 10, vx: 14, vy: 2 });
+        this.bullets.push({ x: this.shipX + 20, y: this.shipY - 10, vx: bSpd, vy: -120 });
+        this.bullets.push({ x: this.shipX + 20, y: this.shipY, vx: bSpd, vy: 0 });
+        this.bullets.push({ x: this.shipX + 20, y: this.shipY + 10, vx: bSpd, vy: 120 });
       }
     }
 
-    // Spawn Enemies
-    if (Math.random() < 0.03 + this.level * 0.005) {
+    // Level calculation & Spawn Enemies
+    this.level = Math.floor(this.score / 1500) + 1;
+    if (Math.random() < 0.035 + this.level * 0.005) {
       const isBoss = Math.random() < 0.05 && this.score > 2000;
       this.enemies.push({
-        x: this.canvas.width + 40,
-        y: 40 + Math.random() * (this.canvas.height - 80),
+        x: this.logicalWidth + 40,
+        y: 40 + Math.random() * (this.logicalHeight - 80),
         hp: isBoss ? 150 : 20,
         maxHp: isBoss ? 150 : 20,
         type: isBoss ? 'boss' : Math.random() < 0.3 ? 'heavy' : 'scout',
         color: isBoss ? '#ff0055' : Math.random() < 0.5 ? '#ffaa00' : '#9900ff',
-        vy: (Math.random() - 0.5) * 3
+        vy: (Math.random() - 0.5) * 180
       });
     }
 
-    // Update Bullets & Collisions
+    // Update Bullets & Enemy Collisions
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i];
-      b.x += b.vx;
-      b.y += b.vy;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
 
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const e = this.enemies[j];
@@ -203,8 +286,7 @@ export class SpaceShooterGame {
             this.score += e.type === 'boss' ? 1000 : 150;
             this.onScoreUpdate(this.score);
 
-            // Powerup drop
-            if (Math.random() < 0.25) {
+            if (Math.random() < 0.3) {
               this.powerups.push({
                 x: e.x,
                 y: e.y,
@@ -218,15 +300,15 @@ export class SpaceShooterGame {
         }
       }
 
-      if (b.x > this.canvas.width + 50) this.bullets.splice(i, 1);
+      if (b.x > this.logicalWidth + 50) this.bullets.splice(i, 1);
     }
 
-    // Update Enemies & Ship Collisions
+    // Update Enemies & Ship Collision
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
-      e.x -= 3.5;
-      e.y += e.vy;
-      if (e.y < 30 || e.y > this.canvas.height - 30) e.vy *= -1;
+      e.x -= 200 * dt;
+      e.y += e.vy * dt;
+      if (e.y < 30 || e.y > this.logicalHeight - 30) e.vy *= -1;
 
       if (Math.hypot(this.shipX - e.x, this.shipY - e.y) < this.shipRadius + (e.type === 'boss' ? 35 : 18)) {
         if (this.shield > 0) {
@@ -253,9 +335,10 @@ export class SpaceShooterGame {
     // Update Powerups
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const p = this.powerups[i];
-      p.x -= 2;
+      p.x -= 120 * dt;
       if (Math.hypot(this.shipX - p.x, this.shipY - p.y) < this.shipRadius + 18) {
         audioService.playCoin();
+        storageService.triggerHaptic('light');
         if (p.type === 'triple') this.weaponType = 'triple';
         else this.shield = Math.min(100, this.shield + 50);
         this.powerups.splice(i, 1);
@@ -265,9 +348,9 @@ export class SpaceShooterGame {
     // Update Particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const pt = this.particles[i];
-      pt.x += pt.vx;
-      pt.y += pt.vy;
-      pt.life -= 0.04;
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.life -= dt;
       if (pt.life <= 0) this.particles.splice(i, 1);
     }
   }
@@ -276,8 +359,8 @@ export class SpaceShooterGame {
     for (let i = 0; i < 20; i++) {
       this.particles.push({
         x, y,
-        vx: (Math.random() - 0.5) * 8,
-        vy: (Math.random() - 0.5) * 8,
+        vx: (Math.random() - 0.5) * 300,
+        vy: (Math.random() - 0.5) * 300,
         color,
         life: 0.8
       });
@@ -285,10 +368,10 @@ export class SpaceShooterGame {
   }
 
   private render() {
-    if (!this.ctx || !this.canvas) return;
+    if (!this.ctx) return;
     const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.logicalWidth;
+    const h = this.logicalHeight;
 
     // Space Background
     ctx.fillStyle = '#050711';
@@ -345,7 +428,7 @@ export class SpaceShooterGame {
     // Particles
     this.particles.forEach(pt => {
       ctx.save();
-      ctx.globalAlpha = pt.life;
+      ctx.globalAlpha = Math.max(0, pt.life);
       ctx.fillStyle = pt.color;
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);

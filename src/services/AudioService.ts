@@ -208,7 +208,7 @@ class AudioService {
   }
 
   // Synth Background Music Loop
-  public startSynthMusic(theme: 'racing' | 'runner' | 'action' | 'puzzle' | 'arcade' = 'arcade') {
+  public startSynthMusic(theme: 'racing' | 'runner' | 'action' | 'puzzle' | 'arcade' | 'sports' = 'arcade') {
     this.stopSynthMusic();
     this.initCtx();
     if (!this.ctx || !this.musicGain) return;
@@ -218,6 +218,7 @@ class AudioService {
     
     const scaleMap: Record<string, number[]> = {
       racing: [130.81, 146.83, 164.81, 196.00, 220.00, 261.63],
+      sports: [146.83, 164.81, 196.00, 220.00, 246.94, 293.66],
       runner: [220.00, 246.94, 277.18, 329.63, 369.99, 440.00],
       action: [110.00, 116.54, 130.81, 138.59, 146.83, 164.81],
       puzzle: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00],

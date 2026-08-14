@@ -14,12 +14,14 @@ export interface UserPreferences {
   haptics: boolean;
   graphicsQuality: 'auto' | 'low' | 'medium' | 'high';
   reducedMotion: boolean;
+  leftHandedMode: boolean;
 }
 
 const STORAGE_KEYS = {
   PREFERENCES: 'manuplay_user_preferences',
   FAVORITES: 'manuplay_user_favorites',
   RECENTS: 'manuplay_user_recents',
+  TUTORIALS: 'manuplay_tutorials_completed',
   GAME_SAVE_PREFIX: 'manuplay_save_',
   GUEST_PROFILE: 'manuplay_guest_profile'
 };
@@ -31,7 +33,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   muted: false,
   haptics: true,
   graphicsQuality: 'auto',
-  reducedMotion: false
+  reducedMotion: false,
+  leftHandedMode: false
 };
 
 class StorageService {
@@ -203,6 +206,28 @@ class StorageService {
       }
     } catch {
       // Haptics ignore error
+    }
+  }
+
+  // Tutorial Completion Tracking
+  isTutorialCompleted(gameId: string): boolean {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.TUTORIALS);
+      const tutorials = raw ? JSON.parse(raw) : {};
+      return !!tutorials[gameId];
+    } catch {
+      return false;
+    }
+  }
+
+  setTutorialCompleted(gameId: string): void {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.TUTORIALS);
+      const tutorials = raw ? JSON.parse(raw) : {};
+      tutorials[gameId] = true;
+      localStorage.setItem(STORAGE_KEYS.TUTORIALS, JSON.stringify(tutorials));
+    } catch (e) {
+      console.error('Failed to save tutorial completion state:', e);
     }
   }
 }

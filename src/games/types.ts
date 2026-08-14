@@ -18,7 +18,7 @@ export interface GameDefinition {
   description: string;
   category: GameCategory;
   tags: string[];
-  thumbnailBg: string; // Gradient style for card artwork
+  thumbnailBg: string;
   accentColor: string;
   iconName: string;
   rating: number;
@@ -28,6 +28,8 @@ export interface GameDefinition {
   featured?: boolean;
   isNew?: boolean;
   trending?: boolean;
+  sessionLength?: 'Quick (2-5 min)' | 'Medium (5-15 min)' | 'Long (15+ min)';
+  difficulty?: 'Easy' | 'Medium' | 'Hard' | 'Expert';
   controls: {
     desktop: string[];
     mobile: string[];

@@ -26,10 +26,20 @@ interface ItemDrop {
   type: 'health' | 'nuke';
 }
 
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  life: number;
+}
+
 export class ZombieSurvivalGame {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private animId: number | null = null;
+  private lastTime = 0;
 
   private onGameOver: (score: number) => void;
   private onScoreUpdate: (score: number) => void;
@@ -37,7 +47,7 @@ export class ZombieSurvivalGame {
   private isRunning = false;
   private isPaused = false;
 
-  // Player state
+  // Player State
   private playerX = 400;
   private playerY = 225;
   private playerRadius = 16;
@@ -45,13 +55,13 @@ export class ZombieSurvivalGame {
   private aimAngle = 0;
   private lastFired = 0;
 
-  // Game state
+  // Game World State
   private score = 0;
   private wave = 1;
   private zombies: Zombie[] = [];
   private bullets: Bullet[] = [];
   private items: ItemDrop[] = [];
-  private particles: Array<{ x: number; y: number; vx: number; vy: number; color: string; life: number }> = [];
+  private particles: Particle[] = [];
   private nextZombieId = 1;
   private unsubscribeInput: (() => void) | null = null;
 
@@ -69,8 +79,10 @@ export class ZombieSurvivalGame {
     if (!this.ctx) return;
 
     this.resize();
-    this.playerX = canvas.width / 2;
-    this.playerY = canvas.height / 2;
+    window.addEventListener('resize', this.resize);
+
+    this.playerX = this.logicalWidth / 2;
+    this.playerY = this.logicalHeight / 2;
     this.hp = 100;
 
     this.isRunning = true;
@@ -86,28 +98,47 @@ export class ZombieSurvivalGame {
 
     this.unsubscribeInput = inputService.subscribe(() => {});
     audioService.startSynthMusic('action');
-    this.loop();
+
+    this.lastTime = performance.now();
+    this.loop(this.lastTime);
   }
 
-  private resize() {
+  private resize = () => {
     if (!this.canvas) return;
     const parent = this.canvas.parentElement;
     if (parent) {
-      this.canvas.width = parent.clientWidth || 800;
-      this.canvas.height = parent.clientHeight || 450;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = parent.clientWidth || 800;
+      const height = parent.clientHeight || 450;
+
+      this.canvas.width = width * dpr;
+      this.canvas.height = height * dpr;
+      this.canvas.style.width = `${width}px`;
+      this.canvas.style.height = `${height}px`;
+
+      if (this.ctx) {
+        this.ctx.scale(dpr, dpr);
+      }
     }
+  };
+
+  private get logicalWidth(): number {
+    return this.canvas ? parseFloat(this.canvas.style.width) || this.canvas.width : 800;
+  }
+
+  private get logicalHeight(): number {
+    return this.canvas ? parseFloat(this.canvas.style.height) || this.canvas.height : 450;
   }
 
   private spawnWave(waveNum: number) {
-    if (!this.canvas) return;
-    const count = 5 + waveNum * 4;
+    const count = 6 + waveNum * 4;
     for (let i = 0; i < count; i++) {
       const side = Math.floor(Math.random() * 4);
       let x = 0, y = 0;
-      if (side === 0) { x = Math.random() * this.canvas.width; y = -40; }
-      else if (side === 1) { x = this.canvas.width + 40; y = Math.random() * this.canvas.height; }
-      else if (side === 2) { x = Math.random() * this.canvas.width; y = this.canvas.height + 40; }
-      else { x = -40; y = Math.random() * this.canvas.height; }
+      if (side === 0) { x = Math.random() * this.logicalWidth; y = -40; }
+      else if (side === 1) { x = this.logicalWidth + 40; y = Math.random() * this.logicalHeight; }
+      else if (side === 2) { x = Math.random() * this.logicalWidth; y = this.logicalHeight + 40; }
+      else { x = -40; y = Math.random() * this.logicalHeight; }
 
       this.zombies.push({
         id: this.nextZombieId++,
@@ -115,7 +146,7 @@ export class ZombieSurvivalGame {
         y,
         hp: 20 + waveNum * 5,
         maxHp: 20 + waveNum * 5,
-        speed: 1.2 + Math.random() * 0.8 + waveNum * 0.1,
+        speed: 70 + Math.random() * 40 + waveNum * 6,
         color: waveNum % 2 === 0 ? '#ffaa00' : '#00ff88'
       });
     }
@@ -129,59 +160,69 @@ export class ZombieSurvivalGame {
   public resume() {
     if (!this.isPaused) return;
     this.isPaused = false;
+    this.lastTime = performance.now();
     audioService.startSynthMusic('action');
-    this.loop();
+    this.loop(this.lastTime);
   }
 
   public destroy() {
     this.isRunning = false;
     if (this.animId) cancelAnimationFrame(this.animId);
     if (this.unsubscribeInput) this.unsubscribeInput();
+    window.removeEventListener('resize', this.resize);
     audioService.stopSynthMusic();
   }
 
-  private loop = () => {
+  private loop = (currentTime: number) => {
     if (!this.isRunning || this.isPaused) return;
 
-    this.update();
+    const dt = Math.min((currentTime - this.lastTime) / 1000, 0.05);
+    this.lastTime = currentTime;
+
+    this.update(dt);
     this.render();
 
     this.animId = requestAnimationFrame(this.loop);
   };
 
-  private update() {
-    if (!this.canvas) return;
+  private update(dt: number) {
     const input = inputService.getState();
 
-    // Movement
-    const speed = 4;
+    // Movement from Joystick or DPAD
+    const moveSpeed = 240;
     let dx = 0;
     let dy = 0;
-    if (input.left) dx -= 1;
-    if (input.right) dx += 1;
-    if (input.up) dy -= 1;
-    if (input.down) dy += 1;
 
-    if (dx !== 0 && dy !== 0) {
-      dx *= 0.7071;
-      dy *= 0.7071;
+    if (input.joystick.active) {
+      dx = input.joystick.x;
+      dy = input.joystick.y;
+    } else {
+      if (input.left) dx -= 1;
+      if (input.right) dx += 1;
+      if (input.up) dy -= 1;
+      if (input.down) dy += 1;
+
+      if (dx !== 0 && dy !== 0) {
+        dx *= 0.7071;
+        dy *= 0.7071;
+      }
     }
 
-    this.playerX = Math.max(20, Math.min(this.canvas.width - 20, this.playerX + dx * speed));
-    this.playerY = Math.max(20, Math.min(this.canvas.height - 20, this.playerY + dy * speed));
+    this.playerX = Math.max(20, Math.min(this.logicalWidth - 20, this.playerX + dx * moveSpeed * dt));
+    this.playerY = Math.max(20, Math.min(this.logicalHeight - 20, this.playerY + dy * moveSpeed * dt));
 
     if (dx !== 0 || dy !== 0) {
       this.aimAngle = Math.atan2(dy, dx);
     }
 
-    // Firing
+    // Firing Weapons
     const now = Date.now();
-    if ((input.action1 || input.action2) && now - this.lastFired > 160) {
+    if ((input.action1 || input.action2) && now - this.lastFired > 140) {
       this.lastFired = now;
       audioService.playLaser();
       storageService.triggerHaptic('light');
 
-      const spd = 12;
+      const spd = 720;
       this.bullets.push({
         x: this.playerX + Math.cos(this.aimAngle) * 20,
         y: this.playerY + Math.sin(this.aimAngle) * 20,
@@ -194,9 +235,9 @@ export class ZombieSurvivalGame {
     // Update Bullets
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i];
-      b.x += b.vx;
-      b.y += b.vy;
-      b.life -= 0.02;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.life -= dt * 1.2;
 
       for (let j = this.zombies.length - 1; j >= 0; j--) {
         const z = this.zombies[j];
@@ -208,10 +249,10 @@ export class ZombieSurvivalGame {
             this.particles.push({
               x: z.x,
               y: z.y,
-              vx: (Math.random() - 0.5) * 6,
-              vy: (Math.random() - 0.5) * 6,
+              vx: (Math.random() - 0.5) * 180,
+              vy: (Math.random() - 0.5) * 180,
               color: z.color,
-              life: 0.5
+              life: 0.4
             });
           }
 
@@ -234,20 +275,20 @@ export class ZombieSurvivalGame {
         }
       }
 
-      if (b.life <= 0 || b.x < 0 || b.x > this.canvas.width || b.y < 0 || b.y > this.canvas.height) {
+      if (b.life <= 0 || b.x < 0 || b.x > this.logicalWidth || b.y < 0 || b.y > this.logicalHeight) {
         this.bullets.splice(i, 1);
       }
     }
 
-    // Update Zombies & Collision with Player
+    // Update Zombies
     for (let i = this.zombies.length - 1; i >= 0; i--) {
       const z = this.zombies[i];
       const angle = Math.atan2(this.playerY - z.y, this.playerX - z.x);
-      z.x += Math.cos(angle) * z.speed;
-      z.y += Math.sin(angle) * z.speed;
+      z.x += Math.cos(angle) * z.speed * dt;
+      z.y += Math.sin(angle) * z.speed * dt;
 
       if (Math.hypot(this.playerX - z.x, this.playerY - z.y) < this.playerRadius + 14) {
-        this.hp -= 0.5;
+        this.hp -= 25 * dt;
         storageService.triggerHaptic('medium');
         if (this.hp <= 0) {
           audioService.playExplosion();
@@ -260,13 +301,13 @@ export class ZombieSurvivalGame {
       }
     }
 
-    // Update Items
+    // Item Pickups
     for (let i = this.items.length - 1; i >= 0; i--) {
       const it = this.items[i];
       if (Math.hypot(this.playerX - it.x, this.playerY - it.y) < this.playerRadius + 16) {
         if (it.type === 'health') {
           audioService.playCoin();
-          this.hp = Math.min(100, this.hp + 30);
+          this.hp = Math.min(100, this.hp + 35);
         } else {
           audioService.playExplosion();
           this.zombies.forEach(z => {
@@ -279,7 +320,7 @@ export class ZombieSurvivalGame {
       }
     }
 
-    // Check Wave Progression
+    // Wave Progression
     if (this.zombies.length === 0) {
       this.wave++;
       this.score += 500;
@@ -290,9 +331,9 @@ export class ZombieSurvivalGame {
     // Update Particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const pt = this.particles[i];
-      pt.x += pt.vx;
-      pt.y += pt.vy;
-      pt.life -= 0.04;
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.life -= dt;
       if (pt.life <= 0) this.particles.splice(i, 1);
     }
   }
@@ -301,19 +342,19 @@ export class ZombieSurvivalGame {
     for (let i = 0; i < 16; i++) {
       this.particles.push({
         x, y,
-        vx: (Math.random() - 0.5) * 8,
-        vy: (Math.random() - 0.5) * 8,
+        vx: (Math.random() - 0.5) * 240,
+        vy: (Math.random() - 0.5) * 240,
         color,
-        life: 0.7
+        life: 0.6
       });
     }
   }
 
   private render() {
-    if (!this.ctx || !this.canvas) return;
+    if (!this.ctx) return;
     const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.logicalWidth;
+    const h = this.logicalHeight;
 
     // Arena Floor
     ctx.fillStyle = '#0f1322';
@@ -328,7 +369,7 @@ export class ZombieSurvivalGame {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    // Draw Items
+    // Items
     this.items.forEach(it => {
       ctx.save();
       ctx.shadowBlur = 12;
@@ -346,17 +387,17 @@ export class ZombieSurvivalGame {
       ctx.restore();
     });
 
-    // Draw Bullets
+    // Bullets
     ctx.strokeStyle = '#ff007f';
     ctx.lineWidth = 4;
     this.bullets.forEach(b => {
       ctx.beginPath();
       ctx.moveTo(b.x, b.y);
-      ctx.lineTo(b.x - b.vx * 1.5, b.y - b.vy * 1.5);
+      ctx.lineTo(b.x - b.vx * 0.05, b.y - b.vy * 0.05);
       ctx.stroke();
     });
 
-    // Draw Zombies
+    // Zombies
     this.zombies.forEach(z => {
       ctx.save();
       ctx.shadowBlur = 10;
@@ -376,7 +417,7 @@ export class ZombieSurvivalGame {
     // Particles
     this.particles.forEach(pt => {
       ctx.save();
-      ctx.globalAlpha = pt.life;
+      ctx.globalAlpha = Math.max(0, pt.life);
       ctx.fillStyle = pt.color;
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);

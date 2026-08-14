@@ -84,6 +84,19 @@ class GameService {
       })
       .slice(0, limit);
   }
+
+  public getSurpriseGame(excludeIds: string[] = []): GameDefinition {
+    const candidates = GAMES_CATALOG.filter(g => !excludeIds.includes(g.id));
+    const pool = candidates.length > 0 ? candidates : GAMES_CATALOG;
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    return pool[randomIndex];
+  }
+
+  public getGameOfDay(): GameDefinition {
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    const index = dayOfYear % GAMES_CATALOG.length;
+    return GAMES_CATALOG[index] || GAMES_CATALOG[0];
+  }
 }
 
 export const gameService = new GameService();

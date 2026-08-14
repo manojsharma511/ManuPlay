@@ -9,6 +9,15 @@ interface BlockShape {
   height: number;
 }
 
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  life: number;
+}
+
 const SHAPES: Array<{ matrix: number[][]; color: string }> = [
   { matrix: [[1, 1], [1, 1]], color: '#00f0ff' }, // 2x2 Square
   { matrix: [[1, 1, 1]], color: '#ff007f' },     // 3x1 Line
@@ -37,6 +46,7 @@ export class BlockPuzzleGame {
   private selectedShapeIndex: number | null = null;
   private touchX = 0;
   private touchY = 0;
+  private particles: Particle[] = [];
 
   // Game state
   private score = 0;
@@ -55,10 +65,13 @@ export class BlockPuzzleGame {
     if (!this.ctx) return;
 
     this.resize();
+    window.addEventListener('resize', this.resize);
+
     this.grid = Array(8).fill(null).map(() => Array(8).fill(''));
     this.score = 0;
     this.isRunning = true;
     this.isPaused = false;
+    this.particles = [];
 
     this.generateNewShapes();
     this.setupTouchEvents();
@@ -67,13 +80,31 @@ export class BlockPuzzleGame {
     this.loop();
   }
 
-  private resize() {
+  private resize = () => {
     if (!this.canvas) return;
     const parent = this.canvas.parentElement;
     if (parent) {
-      this.canvas.width = parent.clientWidth || 400;
-      this.canvas.height = parent.clientHeight || 650;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = parent.clientWidth || 400;
+      const height = parent.clientHeight || 650;
+
+      this.canvas.width = width * dpr;
+      this.canvas.height = height * dpr;
+      this.canvas.style.width = `${width}px`;
+      this.canvas.style.height = `${height}px`;
+
+      if (this.ctx) {
+        this.ctx.scale(dpr, dpr);
+      }
     }
+  };
+
+  private get logicalWidth(): number {
+    return this.canvas ? parseFloat(this.canvas.style.width) || this.canvas.width : 400;
+  }
+
+  private get logicalHeight(): number {
+    return this.canvas ? parseFloat(this.canvas.style.height) || this.canvas.height : 650;
   }
 
   private generateNewShapes() {
@@ -90,79 +121,79 @@ export class BlockPuzzleGame {
     }
   }
 
+  private handleStart = (e: MouseEvent | TouchEvent) => {
+    if (!this.canvas || !this.isRunning) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    this.touchX = clientX - rect.left;
+    this.touchY = clientY - rect.top;
+
+    const shapeContainerY = this.logicalHeight - 140;
+    if (this.touchY > shapeContainerY) {
+      const slotW = this.logicalWidth / 3;
+      const slotIdx = Math.floor(this.touchX / slotW);
+      if (this.currentShapes[slotIdx]) {
+        this.selectedShapeIndex = slotIdx;
+        audioService.playClick();
+        storageService.triggerHaptic('light');
+      }
+    }
+  };
+
+  private handleMove = (e: MouseEvent | TouchEvent) => {
+    if (this.selectedShapeIndex === null || !this.canvas) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    this.touchX = clientX - rect.left;
+    this.touchY = clientY - rect.top;
+  };
+
+  private handleEnd = () => {
+    if (this.selectedShapeIndex === null || !this.canvas) return;
+    const shape = this.currentShapes[this.selectedShapeIndex];
+    if (shape) {
+      const cellSize = (this.logicalWidth - 40) / 8;
+      const gridX = Math.floor((this.touchX - 20) / cellSize);
+      const gridY = Math.floor((this.touchY - 60) / cellSize);
+
+      if (this.canPlaceShape(shape, gridX, gridY)) {
+        this.placeShape(shape, gridX, gridY);
+        this.currentShapes[this.selectedShapeIndex] = null;
+        audioService.playJump();
+        storageService.triggerHaptic('light');
+
+        this.checkLineClears();
+
+        if (this.currentShapes.every(s => s === null)) {
+          this.generateNewShapes();
+        }
+
+        if (this.checkGameOver()) {
+          audioService.playGameOver();
+          storageService.triggerHaptic('error');
+          this.destroy();
+          this.onGameOver(this.score);
+          return;
+        }
+      }
+    }
+    this.selectedShapeIndex = null;
+  };
+
   private setupTouchEvents() {
     if (!this.canvas) return;
-    
-    const handleStart = (e: MouseEvent | TouchEvent) => {
-      if (!this.canvas || !this.isRunning) return;
-      const rect = this.canvas.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
-      this.touchX = clientX - rect.left;
-      this.touchY = clientY - rect.top;
+    this.canvas.addEventListener('mousedown', this.handleStart);
+    this.canvas.addEventListener('mousemove', this.handleMove);
+    window.addEventListener('mouseup', this.handleEnd);
 
-      // Check shape selection
-      const shapeContainerY = this.canvas.height - 120;
-      if (this.touchY > shapeContainerY) {
-        const slotW = this.canvas.width / 3;
-        const slotIdx = Math.floor(this.touchX / slotW);
-        if (this.currentShapes[slotIdx]) {
-          this.selectedShapeIndex = slotIdx;
-          audioService.playClick();
-        }
-      }
-    };
-
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (this.selectedShapeIndex === null || !this.canvas) return;
-      const rect = this.canvas.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-      this.touchX = clientX - rect.left;
-      this.touchY = clientY - rect.top;
-    };
-
-    const handleEnd = () => {
-      if (this.selectedShapeIndex === null || !this.canvas) return;
-      const shape = this.currentShapes[this.selectedShapeIndex];
-      if (shape) {
-        const cellSize = (this.canvas.width - 40) / 8;
-        const gridX = Math.floor((this.touchX - 20) / cellSize);
-        const gridY = Math.floor((this.touchY - 60) / cellSize);
-
-        if (this.canPlaceShape(shape, gridX, gridY)) {
-          this.placeShape(shape, gridX, gridY);
-          this.currentShapes[this.selectedShapeIndex] = null;
-          audioService.playJump();
-          storageService.triggerHaptic('light');
-
-          this.checkLineClears();
-
-          if (this.currentShapes.every(s => s === null)) {
-            this.generateNewShapes();
-          }
-
-          if (this.checkGameOver()) {
-            audioService.playGameOver();
-            storageService.triggerHaptic('error');
-            this.destroy();
-            this.onGameOver(this.score);
-            return;
-          }
-        }
-      }
-      this.selectedShapeIndex = null;
-    };
-
-    this.canvas.addEventListener('mousedown', handleStart);
-    this.canvas.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-
-    this.canvas.addEventListener('touchstart', handleStart);
-    this.canvas.addEventListener('touchmove', handleMove);
-    window.addEventListener('touchend', handleEnd);
+    this.canvas.addEventListener('touchstart', this.handleStart, { passive: true });
+    this.canvas.addEventListener('touchmove', this.handleMove, { passive: true });
+    window.addEventListener('touchend', this.handleEnd);
   }
 
   private canPlaceShape(shape: BlockShape, gx: number, gy: number): boolean {
@@ -197,11 +228,9 @@ export class BlockPuzzleGame {
     const rowsToClear: number[] = [];
     const colsToClear: number[] = [];
 
-    // Check rows
     for (let r = 0; r < 8; r++) {
       if (this.grid[r].every(cell => cell !== '')) rowsToClear.push(r);
     }
-    // Check cols
     for (let c = 0; c < 8; c++) {
       let full = true;
       for (let r = 0; r < 8; r++) {
@@ -214,16 +243,38 @@ export class BlockPuzzleGame {
       audioService.playCoin();
       storageService.triggerHaptic('medium');
 
+      const cellSize = (this.logicalWidth - 40) / 8;
+
       rowsToClear.forEach(r => {
-        for (let c = 0; c < 8; c++) this.grid[r][c] = '';
+        for (let c = 0; c < 8; c++) {
+          this.createClearParticles(20 + c * cellSize + cellSize / 2, 60 + r * cellSize + cellSize / 2, this.grid[r][c] || '#00f0ff');
+          this.grid[r][c] = '';
+        }
       });
       colsToClear.forEach(c => {
-        for (let r = 0; r < 8; r++) this.grid[r][c] = '';
+        for (let r = 0; r < 8; r++) {
+          if (this.grid[r][c] !== '') {
+            this.createClearParticles(20 + c * cellSize + cellSize / 2, 60 + r * cellSize + cellSize / 2, this.grid[r][c]);
+            this.grid[r][c] = '';
+          }
+        }
       });
 
       const totalLines = rowsToClear.length + colsToClear.length;
-      this.score += totalLines * 100 * totalLines; // Combo multiplier
+      this.score += totalLines * 100 * totalLines;
       this.onScoreUpdate(this.score);
+    }
+  }
+
+  private createClearParticles(x: number, y: number, color: string) {
+    for (let i = 0; i < 6; i++) {
+      this.particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 160,
+        vy: (Math.random() - 0.5) * 160,
+        color,
+        life: 0.5
+      });
     }
   }
 
@@ -235,12 +286,12 @@ export class BlockPuzzleGame {
       for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
           if (this.canPlaceShape(shape, c, r)) {
-            return false; // Valid placement exists
+            return false;
           }
         }
       }
     }
-    return true; // No available placements -> Game Over!
+    return true;
   }
 
   public pause() {
@@ -258,11 +309,29 @@ export class BlockPuzzleGame {
   public destroy() {
     this.isRunning = false;
     if (this.animId) cancelAnimationFrame(this.animId);
+    if (this.canvas) {
+      this.canvas.removeEventListener('mousedown', this.handleStart);
+      this.canvas.removeEventListener('mousemove', this.handleMove);
+      this.canvas.removeEventListener('touchstart', this.handleStart);
+      this.canvas.removeEventListener('touchmove', this.handleMove);
+    }
+    window.removeEventListener('mouseup', this.handleEnd);
+    window.removeEventListener('touchend', this.handleEnd);
+    window.removeEventListener('resize', this.resize);
     audioService.stopSynthMusic();
   }
 
   private loop = () => {
     if (!this.isRunning || this.isPaused) return;
+
+    // Update Particles
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const pt = this.particles[i];
+      pt.x += pt.vx * 0.016;
+      pt.y += pt.vy * 0.016;
+      pt.life -= 0.016;
+      if (pt.life <= 0) this.particles.splice(i, 1);
+    }
 
     this.render();
 
@@ -270,10 +339,10 @@ export class BlockPuzzleGame {
   };
 
   private render() {
-    if (!this.ctx || !this.canvas) return;
+    if (!this.ctx) return;
     const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.logicalWidth;
+    const h = this.logicalHeight;
 
     // Background
     ctx.fillStyle = '#0a0c14';
@@ -299,6 +368,47 @@ export class BlockPuzzleGame {
         ctx.stroke();
       }
     }
+
+    // Ghost Preview on Valid Grid Hover/Drag
+    if (this.selectedShapeIndex !== null) {
+      const shape = this.currentShapes[this.selectedShapeIndex];
+      if (shape) {
+        const gx = Math.floor((this.touchX - 20) / cellSize);
+        const gy = Math.floor((this.touchY - 60) / cellSize);
+
+        if (this.canPlaceShape(shape, gx, gy)) {
+          ctx.save();
+          ctx.fillStyle = `${shape.color}44`;
+          ctx.strokeStyle = shape.color;
+          ctx.lineWidth = 2;
+
+          for (let r = 0; r < shape.height; r++) {
+            for (let c = 0; c < shape.width; c++) {
+              if (shape.matrix[r][c] === 1) {
+                const px = gridOriginX + (gx + c) * cellSize;
+                const py = gridOriginY + (gy + r) * cellSize;
+                ctx.beginPath();
+                ctx.roundRect(px + 2, py + 2, cellSize - 4, cellSize - 4, 6);
+                ctx.fill();
+                ctx.stroke();
+              }
+            }
+          }
+          ctx.restore();
+        }
+      }
+    }
+
+    // Particles
+    this.particles.forEach(pt => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, pt.life);
+      ctx.fillStyle = pt.color;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
 
     // Render Shape Slots at bottom
     const shapeContainerY = h - 140;

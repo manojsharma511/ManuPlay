@@ -10,6 +10,8 @@ import { FavoritesPage } from './pages/FavoritesPage';
 import { RecentPage } from './pages/RecentPage';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { LeaderboardsPage } from './pages/LeaderboardsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export function App() {
@@ -27,6 +29,8 @@ export function App() {
           <Route path="recent" element={<RecentPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="leaderboards" element={<LeaderboardsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
