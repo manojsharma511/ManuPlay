@@ -1,48 +1,58 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0c14" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="/manifest.json" />
-    
-    <!-- Primary Meta Tags -->
-    <title>ManuPlay - Play Free Instant Mobile & Browser Games</title>
-    <meta name="title" content="ManuPlay - Play Free Instant Mobile & Browser Games" />
-    <meta name="description" content="Discover and play premium mobile-first HTML5 games instantly on ManuPlay. No downloads, zero ads, instant action." />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://manuplay.app/" />
-    <meta property="og:title" content="ManuPlay - Play Free Instant Mobile & Browser Games" />
-    <meta property="og:description" content="Discover and play premium mobile-first HTML5 games instantly on ManuPlay." />
-    <meta property="og:image" content="/favicon.svg" />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0c14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.json" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:title" content="ManuPlay - Play Free Instant Mobile & Browser Games" />
-    <meta property="twitter:description" content="Discover and play premium mobile-first HTML5 games instantly on ManuPlay." />
-    
-    <!-- Preconnect Google Fonts if needed -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-      body { font-family: 'Outfit', system-ui, sans-serif; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-      }
-    </script>
-  </body>
+  <!-- Primary Meta Tags -->
+  <title>ManuPlay - Play Free Instant Mobile & Browser Games</title>
+  <meta name="title" content="ManuPlay - Play Free Instant Mobile & Browser Games" />
+  <meta name="description"
+    content="Discover and play premium mobile-first HTML5 games instantly on ManuPlay. No downloads, zero ads, instant action." />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://manuplay.app/" />
+  <meta property="og:title" content="ManuPlay - Play Free Instant Mobile & Browser Games" />
+  <meta property="og:description" content="Discover and play premium mobile-first HTML5 games instantly on ManuPlay." />
+  <meta property="og:image" content="/favicon.svg" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:title" content="ManuPlay - Play Free Instant Mobile & Browser Games" />
+  <meta property="twitter:description"
+    content="Discover and play premium mobile-first HTML5 games instantly on ManuPlay." />
+  <meta name="google-site-verification" content="Csau_Z8jgnSOxN8LUubbMZAp0PiGK3dP_4lWRtEm4Yc" />
+
+  <!-- Preconnect Google Fonts if needed -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => { });
+      });
+    }
+  </script>
+</body>
+
 </html>

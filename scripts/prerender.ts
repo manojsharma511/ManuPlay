@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Define Site Configuration
-const SITE_DOMAIN = 'https://www.manuplayvercel.app';
+const SITE_DOMAIN = 'https://manuplay.vercel.app/';
 const SITE_NAME = 'ManuPlay';
 const DEFAULT_OG_IMAGE = `${SITE_DOMAIN}/og-image.png`;
 
