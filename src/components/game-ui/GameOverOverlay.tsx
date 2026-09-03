@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { RotateCcw, Trophy, Home, Sparkles, Zap } from 'lucide-react';
+import { RotateCcw, Trophy, Home, Sparkles, Zap, Coins } from 'lucide-react';
 import { Button } from '../common/Button';
 import { storageService } from '../../services/StorageService';
 import { gameService } from '../../services/GameService';
+import { manuCoinsService } from '../../services/ManuCoinsService';
+import { streakService } from '../../services/StreakService';
 import type { GameDefinition } from '../../games/types';
 
 interface GameOverOverlayProps {
@@ -26,6 +28,8 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
   const [highScore, setHighScore] = useState(score);
   const [isNewHigh, setIsNewHigh] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [coinsEarned, setCoinsEarned] = useState(0);
+  const [streakCount, setStreakCount] = useState(1);
   const [recommendedGames, setRecommendedGames] = useState<GameDefinition[]>([]);
 
   useEffect(() => {
@@ -33,7 +37,18 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
       const state = await storageService.loadGameState(gameId);
       const prevBest = state?.highScore || 0;
       const calculatedXp = Math.round(score * 0.1) + 50;
+      const gameDef = gameService.getGameBySlug(gameId);
+      const coins = gameDef?.manuCoinsReward || 50;
+
       setXpEarned(calculatedXp);
+      setCoinsEarned(coins);
+
+      // Award coins
+      manuCoinsService.addCoins(coins);
+
+      // Record daily streak
+      const { streak } = streakService.recordDailyActivity();
+      setStreakCount(streak);
 
       if (score > prevBest) {
         setIsNewHigh(true);
@@ -87,10 +102,17 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
           </div>
         </div>
 
-        {/* XP Reward Badge */}
-        <div className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold">
-          <Zap className="w-4 h-4 fill-purple-300" />
-          <span>REWARD: +{xpEarned} XP</span>
+        {/* XP & ManuCoins Rewards Bar */}
+        <div className="grid grid-cols-3 gap-2 py-1.5 px-2 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-bold">
+          <div className="flex items-center justify-center gap-1 text-purple-400">
+            <Zap className="w-3.5 h-3.5 fill-purple-400" /> +{xpEarned} XP
+          </div>
+          <div className="flex items-center justify-center gap-1 text-amber-400">
+            <Coins className="w-3.5 h-3.5 text-amber-400" /> +{coinsEarned}
+          </div>
+          <div className="flex items-center justify-center gap-1 text-rose-400">
+            🔥 STREAK: {streakCount}d
+          </div>
         </div>
 
         {/* Action CTAs */}
@@ -118,7 +140,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
               {recommendedGames.map(g => (
                 <button
                   key={g.id}
-                  onClick={() => navigate(`/game/${g.slug}/play`)}
+                  onClick={() => navigate(`/games/${g.slug}/play`)}
                   className="flex flex-col items-center p-2 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-cyan-500/50 active:scale-95 transition-all text-center cursor-pointer group"
                 >
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs mb-1" style={{ background: g.thumbnailBg }}>
@@ -138,3 +160,4 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
     </div>
   );
 };
+

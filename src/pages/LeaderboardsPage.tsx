@@ -2,12 +2,20 @@ import React from 'react';
 import { Trophy } from 'lucide-react';
 import { gameService } from '../services/GameService';
 import { progressionService } from '../services/ProgressionService';
+import { SEO } from '../components/common/SEO';
 
 export const LeaderboardsPage: React.FC = () => {
   const games = gameService.getAllGames();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      
+      <SEO
+        title="High Score Leaderboards"
+        description="Track your personal best game scores on ManuPlay."
+        path="/leaderboards"
+        noindex={true}
+      />
       
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-800 pb-4">

@@ -7,6 +7,7 @@ import { storageService } from '../services/StorageService';
 import { gameService } from '../services/GameService';
 import { AvatarCustomizer } from '../components/profile/AvatarCustomizer';
 import { GameGrid } from '../components/game-ui/GameGrid';
+import { SEO } from '../components/common/SEO';
 
 export const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'mastery' | 'favorites' | 'history'>('overview');
@@ -23,6 +24,12 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <SEO
+        title="Player Profile"
+        description="User player profile settings and achievements."
+        path="/profile"
+        noindex={true}
+      />
       
       {/* Player Header Banner */}
       <div className="relative rounded-3xl overflow-hidden glass-card border border-cyan-500/20 shadow-2xl p-6 sm:p-8 space-y-6">

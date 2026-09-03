@@ -4,6 +4,7 @@ import { Search, Heart, Flame, Gamepad2, Sparkles, User, Trophy } from 'lucide-r
 import { storageService } from '../../services/StorageService';
 import { userService } from '../../services/UserService';
 import { progressionService } from '../../services/ProgressionService';
+import { ManuCoinsBadge } from '../common/ManuCoinsBadge';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -101,6 +102,11 @@ export const Header: React.FC = () => {
 
         {/* Action Controls & Mobile Icons */}
         <div className="flex items-center gap-2">
+          {/* ManuCoins Currency Badge */}
+          <div className="hidden sm:block">
+            <ManuCoinsBadge />
+          </div>
+
           {/* Mobile Search Button */}
           <Link
             to="/search"

@@ -10,13 +10,57 @@ export interface GameFilterOptions {
   limit?: number;
 }
 
+function enrichGameSEO(game: GameDefinition): GameDefinition {
+  const seoTitle = game.seoTitle || `Play ${game.title} Online Free | ManuPlay`;
+  const seoDescription = game.seoDescription || `Play ${game.title} online for free on ManuPlay. ${game.description} No downloads, zero ads, instant action on mobile and desktop.`;
+  
+  const howToPlay = game.howToPlay && game.howToPlay.length > 0 ? game.howToPlay : [
+    `Launch ${game.title} directly in your browser by clicking START GAME.`,
+    `Review the controls: Desktop uses keyboard/mouse, Mobile uses responsive touch buttons.`,
+    `Score points, complete objectives, beat your local high score, and earn ManuCoins!`
+  ];
+
+  const features = game.features && game.features.length > 0 ? game.features : [
+    'Instant free browser play with zero install',
+    'Responsive touch & keyboard control scheme',
+    'Local high score and progress save system',
+    'Earn ManuCoins and level up your player profile',
+    'High performance lightweight HTML5 engine'
+  ];
+
+  const faqs = game.faqs && game.faqs.length > 0 ? game.faqs : [
+    {
+      question: `Is ${game.title} free to play online?`,
+      answer: `Yes! ${game.title} is 100% free to play directly on ManuPlay without any downloads or mandatory registration.`
+    },
+    {
+      question: `Can I play ${game.title} on my phone or tablet?`,
+      answer: `Yes, ${game.title} is fully optimized for mobile touchscreens (iOS and Android) as well as desktop browsers.`
+    },
+    {
+      question: `Does ${game.title} save my progress and high score?`,
+      answer: `Yes, ManuPlay automatically saves your personal best score, coin earnings, and progression locally.`
+    }
+  ];
+
+  return {
+    ...game,
+    seoTitle,
+    seoDescription,
+    howToPlay,
+    features,
+    faqs
+  };
+}
+
 class GameService {
   public getAllGames(): GameDefinition[] {
-    return GAMES_CATALOG;
+    return GAMES_CATALOG.map(enrichGameSEO);
   }
 
   public getGameBySlug(slug: string): GameDefinition | undefined {
-    return GAMES_CATALOG.find(g => g.slug === slug || g.id === slug);
+    const raw = GAMES_CATALOG.find(g => g.slug === slug || g.id === slug);
+    return raw ? enrichGameSEO(raw) : undefined;
   }
 
   public getGames(options: GameFilterOptions = {}): GameDefinition[] {
@@ -69,11 +113,11 @@ class GameService {
       result = result.slice(0, options.limit);
     }
 
-    return result;
+    return result.map(enrichGameSEO);
   }
 
   public getRelatedGames(currentGameId: string, limit = 4): GameDefinition[] {
-    const current = this.getGameBySlug(currentGameId);
+    const current = GAMES_CATALOG.find(g => g.id === currentGameId || g.slug === currentGameId);
     if (!current) return this.getAllGames().slice(0, limit);
 
     return GAMES_CATALOG
@@ -82,20 +126,21 @@ class GameService {
         const sameCat = (b.category === current.category ? 2 : 0) - (a.category === current.category ? 2 : 0);
         return sameCat || (b.rating - a.rating);
       })
-      .slice(0, limit);
+      .slice(0, limit)
+      .map(enrichGameSEO);
   }
 
   public getSurpriseGame(excludeIds: string[] = []): GameDefinition {
     const candidates = GAMES_CATALOG.filter(g => !excludeIds.includes(g.id));
     const pool = candidates.length > 0 ? candidates : GAMES_CATALOG;
     const randomIndex = Math.floor(Math.random() * pool.length);
-    return pool[randomIndex];
+    return enrichGameSEO(pool[randomIndex]);
   }
 
   public getGameOfDay(): GameDefinition {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
     const index = dayOfYear % GAMES_CATALOG.length;
-    return GAMES_CATALOG[index] || GAMES_CATALOG[0];
+    return enrichGameSEO(GAMES_CATALOG[index] || GAMES_CATALOG[0]);
   }
 }
 

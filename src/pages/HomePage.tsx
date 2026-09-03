@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Dices, Trophy, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight, Dices, Trophy, Sparkles, Zap, Flame } from 'lucide-react';
 import { gameService } from '../services/GameService';
 import { challengeService } from '../services/ChallengeService';
+import { recommendationService } from '../services/RecommendationService';
+import { storageService } from '../services/StorageService';
+import { streakService } from '../services/StreakService';
 import { CATEGORIES_LIST } from '../games/registry';
 import { GameHero } from '../components/game-ui/GameHero';
 import { GameCarousel } from '../components/game-ui/GameCarousel';
@@ -11,35 +14,72 @@ import { CategoryCard } from '../components/game-ui/CategoryCard';
 import { DailyChallengeCard } from '../components/game-ui/DailyChallengeCard';
 import { QuickPlayModal } from '../components/game-ui/QuickPlayModal';
 import { Button } from '../components/common/Button';
+import { SEO } from '../components/common/SEO';
+import type { GameDefinition } from '../games/types';
 
 export const HomePage: React.FC = () => {
   const [isQuickPlayOpen, setIsQuickPlayOpen] = useState(false);
-  const challenges = challengeService.getChallenges().slice(0, 3);
+  const [recentGames, setRecentGames] = useState<GameDefinition[]>([]);
+  const [forYouGames, setForYouGames] = useState<GameDefinition[]>([]);
+  const [streakInfo, setStreakInfo] = useState(() => streakService.getStreakInfo());
 
-  const featuredGame = gameService.getGames({ featuredOnly: true })[0];
-  const gameOfTheDay = gameService.getGameBySlug('tower-defense') || featuredGame;
+  const challenges = challengeService.getChallenges().slice(0, 3);
+  const featuredGame = gameService.getGameBySlug('manu-kart') || gameService.getGames({ featuredOnly: true })[0];
+  const gameOfTheDay = gameService.getGameBySlug('chess') || featuredGame;
   const trendingGames = gameService.getGames({ trendingOnly: true });
   const popularGames = gameService.getGames({ sortBy: 'popular' });
+  const offlineGames = gameService.getAllGames().filter(g => g.offlineSupported);
   const quickGames = gameService.getAllGames().filter(g => g.sessionLength?.includes('Quick'));
-  const puzzleGames = gameService.getGames({ category: 'Puzzle' });
   const allGames = gameService.getAllGames();
+
+  useEffect(() => {
+    // Recently Played games
+    const recentIds = storageService.getRecentlyPlayed();
+    const resolvedRecents = recentIds
+      .map(id => gameService.getGameBySlug(id))
+      .filter((g): g is GameDefinition => g !== undefined)
+      .slice(0, 6);
+    setRecentGames(resolvedRecents);
+
+    // Personalized For You games
+    const recs = recommendationService.getPersonalizedRecommendations(6);
+    setForYouGames(recs);
+
+    setStreakInfo(streakService.getStreakInfo());
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-8">
       
-      {/* Quick Play Toolbar Bar */}
-      <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-purple-600/10 to-pink-500/10 border border-cyan-500/20 backdrop-blur-md">
-        <div className="flex items-center gap-2">
+      <SEO
+        title="ManuPlay — Free Online Games to Play Instantly"
+        description="Discover and play 100+ top free online browser games instantly on ManuPlay. No downloads, zero ads, instant action on mobile and desktop."
+        path="/"
+      />
+
+      {/* Visually Accessible Primary H1 for Search Engine Indexing */}
+      <div className="sr-only">
+        <h1>ManuPlay — Free Instant Mobile & Browser Games</h1>
+      </div>
+
+      {/* Quick Play & Streak Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-purple-600/10 to-pink-500/10 border border-cyan-500/20 backdrop-blur-md">
+        <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-cyan-400 text-slate-950 font-black">
             <Zap className="w-4 h-4 fill-slate-950" />
           </div>
-          <span className="font-extrabold text-xs sm:text-sm text-white tracking-wide">
-            Want to play something right now?
-          </span>
+          <div>
+            <span className="font-extrabold text-xs sm:text-sm text-white tracking-wide block">
+              Instant Mobile Gaming Platform
+            </span>
+            <span className="text-[11px] font-bold text-rose-400 flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 fill-rose-400" /> DAILY STREAK: {streakInfo.currentStreak} DAYS
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm" onClick={() => setIsQuickPlayOpen(true)}>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="primary" size="sm" fullWidth onClick={() => setIsQuickPlayOpen(true)}>
             <Dices className="w-4 h-4" /> SURPRISE ME 🎲
           </Button>
         </div>
@@ -47,6 +87,15 @@ export const HomePage: React.FC = () => {
 
       {/* Hero Section */}
       <GameHero featuredGame={featuredGame} />
+
+      {/* Continue Playing (If recent games exist) */}
+      {recentGames.length > 0 && (
+        <GameCarousel
+          title="🎮 Continue Playing"
+          subtitle="Jump straight back into your recent games"
+          games={recentGames}
+        />
+      )}
 
       {/* Daily Quests / Challenges Row */}
       <section className="my-6">
@@ -66,6 +115,15 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* For You Recommendations */}
+      {forYouGames.length > 0 && (
+        <GameCarousel
+          title="✨ For You"
+          subtitle="Recommended based on your favorite genres and play activity"
+          games={forYouGames}
+        />
+      )}
+
       {/* Game of the Day Showcase */}
       {gameOfTheDay && (
         <section className="relative rounded-3xl overflow-hidden glass-card border border-amber-500/30 p-6 sm:p-8 shadow-2xl">
@@ -80,12 +138,12 @@ export const HomePage: React.FC = () => {
                 {gameOfTheDay.description}
               </p>
               <div className="flex items-center gap-3 pt-2">
-                <Link to={`/game/${gameOfTheDay.slug}/play`}>
+                <Link to={`/games/${gameOfTheDay.slug}/play`}>
                   <Button variant="primary" size="md">
                     PLAY GAME OF THE DAY
                   </Button>
                 </Link>
-                <Link to={`/game/${gameOfTheDay.slug}`}>
+                <Link to={`/games/${gameOfTheDay.slug}`}>
                   <Button variant="outline" size="md">
                     Details
                   </Button>
@@ -95,13 +153,6 @@ export const HomePage: React.FC = () => {
           </div>
         </section>
       )}
-
-      {/* Have 5 Minutes? Short Session Quick Games */}
-      <GameCarousel
-        title="⏱️ Have 5 Minutes?"
-        subtitle="Super fast games perfect for quick mobile breaks"
-        games={quickGames}
-      />
 
       {/* Trending Games Horizontal Carousel */}
       <GameCarousel
@@ -113,6 +164,13 @@ export const HomePage: React.FC = () => {
             View All <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         }
+      />
+
+      {/* Play Offline Section */}
+      <GameCarousel
+        title="📶 Play Offline"
+        subtitle="No internet connection required — play anytime, anywhere"
+        games={offlineGames}
       />
 
       {/* Categories Grid */}
@@ -130,11 +188,11 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Brain Training & Puzzle Collection */}
+      {/* Have 5 Minutes? Short Session Quick Games */}
       <GameCarousel
-        title="🧠 Brain Training & Puzzles"
-        subtitle="Relaxing memory, logic, and grid challenges"
-        games={puzzleGames}
+        title="⏱️ Have 5 Minutes?"
+        subtitle="Super fast games perfect for quick mobile breaks"
+        games={quickGames}
       />
 
       {/* Popular Games Section */}
