@@ -14,6 +14,7 @@ import { CategoryCard } from '../components/game-ui/CategoryCard';
 import { DailyChallengeCard } from '../components/game-ui/DailyChallengeCard';
 import { QuickPlayModal } from '../components/game-ui/QuickPlayModal';
 import { Button } from '../components/common/Button';
+import { SEO } from '../components/common/SEO';
 import type { GameDefinition } from '../games/types';
 
 export const HomePage: React.FC = () => {
@@ -50,6 +51,17 @@ export const HomePage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-8">
       
+      <SEO
+        title="ManuPlay — Free Online Games to Play Instantly"
+        description="Discover and play 100+ top free online browser games instantly on ManuPlay. No downloads, zero ads, instant action on mobile and desktop."
+        path="/"
+      />
+
+      {/* Visually Accessible Primary H1 for Search Engine Indexing */}
+      <div className="sr-only">
+        <h1>ManuPlay — Free Instant Mobile & Browser Games</h1>
+      </div>
+
       {/* Quick Play & Streak Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-purple-600/10 to-pink-500/10 border border-cyan-500/20 backdrop-blur-md">
         <div className="flex items-center gap-3">
@@ -126,12 +138,12 @@ export const HomePage: React.FC = () => {
                 {gameOfTheDay.description}
               </p>
               <div className="flex items-center gap-3 pt-2">
-                <Link to={`/game/${gameOfTheDay.slug}/play`}>
+                <Link to={`/games/${gameOfTheDay.slug}/play`}>
                   <Button variant="primary" size="md">
                     PLAY GAME OF THE DAY
                   </Button>
                 </Link>
-                <Link to={`/game/${gameOfTheDay.slug}`}>
+                <Link to={`/games/${gameOfTheDay.slug}`}>
                   <Button variant="outline" size="md">
                     Details
                   </Button>

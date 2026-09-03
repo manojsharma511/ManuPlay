@@ -23,14 +23,14 @@ export const GameCard: React.FC<{ game: GameDefinition }> = ({ game }) => {
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigate(`/game/${game.slug}`);
+    navigate(`/games/${game.slug}`);
   };
 
   return (
     <div className="group relative flex flex-col rounded-2xl overflow-hidden bg-slate-900/70 border border-slate-800/80 hover:border-cyan-500/40 hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-300">
       
       {/* Thumbnail Aspect Box */}
-      <Link to={`/game/${game.slug}`} className="relative aspect-[4/3] w-full overflow-hidden block">
+      <Link to={`/games/${game.slug}`} className="relative aspect-[4/3] w-full overflow-hidden block">
         {/* Gradient Artwork */}
         <div
           className="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 text-center transition-transform duration-500 group-hover:scale-105"
@@ -88,7 +88,7 @@ export const GameCard: React.FC<{ game: GameDefinition }> = ({ game }) => {
       {/* Card Content Footer */}
       <div className="p-3 flex items-center justify-between bg-slate-900/90 border-t border-slate-800/60">
         <div className="flex flex-col min-w-0 pr-2">
-          <Link to={`/game/${game.slug}`} className="font-bold text-sm text-white hover:text-cyan-400 transition-colors truncate">
+          <Link to={`/games/${game.slug}`} className="font-bold text-sm text-white hover:text-cyan-400 transition-colors truncate">
             {game.title}
           </Link>
           <span className="text-[11px] text-slate-400 truncate">

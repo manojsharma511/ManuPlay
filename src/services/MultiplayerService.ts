@@ -17,7 +17,7 @@ class MultiplayerService {
 
     const encoded = btoa(JSON.stringify(payload));
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://manuplay.app';
-    return `${baseUrl}/game/${gameId}/play?challenge=${encodeURIComponent(encoded)}`;
+    return `${baseUrl}/games/${gameId}/play?challenge=${encodeURIComponent(encoded)}`;
   }
 
   // Decode challenge URL parameter

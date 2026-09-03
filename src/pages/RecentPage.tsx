@@ -7,6 +7,8 @@ import type { GameDefinition } from '../games/types';
 import { GameGrid } from '../components/game-ui/GameGrid';
 import { EmptyState } from '../components/common/EmptyState';
 
+import { SEO } from '../components/common/SEO';
+
 export const RecentPage: React.FC = () => {
   const navigate = useNavigate();
   const [recentGames, setRecentGames] = useState<GameDefinition[]>([]);
@@ -21,6 +23,13 @@ export const RecentPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      
+      <SEO
+        title="Recently Played"
+        description="Your recently played games on ManuPlay."
+        path="/recent"
+        noindex={true}
+      />
       
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-800 pb-4">

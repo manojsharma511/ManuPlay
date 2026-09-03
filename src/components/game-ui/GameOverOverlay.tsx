@@ -140,7 +140,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
               {recommendedGames.map(g => (
                 <button
                   key={g.id}
-                  onClick={() => navigate(`/game/${g.slug}/play`)}
+                  onClick={() => navigate(`/games/${g.slug}/play`)}
                   className="flex flex-col items-center p-2 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-cyan-500/50 active:scale-95 transition-all text-center cursor-pointer group"
                 >
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs mb-1" style={{ background: g.thumbnailBg }}>

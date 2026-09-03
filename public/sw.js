@@ -1,7 +1,5 @@
-const CACHE_NAME = 'manuplay-v1';
+const CACHE_NAME = 'manuplay-v2';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/favicon.svg'
 ];
@@ -34,23 +32,43 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+
+  // Bypass service worker completely for SEO files and API calls
+  if (url.pathname === '/sitemap.xml' || url.pathname === '/robots.txt') {
+    return;
+  }
+
+  // Network First for HTML navigation requests to prevent stale SEO metadata
+  if (event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => cached || caches.match('/index.html'));
+        })
+    );
+    return;
+  }
+
+  // Stale-While-Revalidate for static assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cached asset & update cache in background (Stale-While-Revalidate)
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
           }
-        }).catch(() => {/* Offline fallback */});
+        }).catch(() => {});
         return cachedResponse;
       }
-      return fetch(event.request).catch(() => {
-        // Fallback for HTML navigation
-        if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/index.html');
-        }
-      });
+      return fetch(event.request);
     })
   );
 });

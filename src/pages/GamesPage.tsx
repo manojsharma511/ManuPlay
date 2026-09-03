@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { gameService } from '../services/GameService';
@@ -6,6 +6,8 @@ import { CATEGORIES_LIST } from '../games/registry';
 import { CategoryChip } from '../components/navigation/CategoryChip';
 import { GameGrid } from '../components/game-ui/GameGrid';
 import { EmptyState } from '../components/common/EmptyState';
+import { SEO } from '../components/common/SEO';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 
 export const GamesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -13,6 +15,10 @@ export const GamesPage: React.FC = () => {
   const activeSort = (searchParams.get('sort') || 'popular') as 'popular' | 'newest' | 'rating' | 'title';
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const filteredGames = useMemo(() => {
     return gameService.getGames({
@@ -35,15 +41,28 @@ export const GamesPage: React.FC = () => {
     setSearchParams(params);
   };
 
+  const breadcrumbs = [{ label: 'All Games' }];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       
+      {/* Catalog Technical SEO */}
+      <SEO
+        title="All Instant Games — Play Free Online Browser Games"
+        description="Browse and play ManuPlay's complete catalog of free online browser games. Play Racing, Action, Puzzle, Sports, Arcade, Chess and Multiplayer games instantly."
+        path="/games"
+        breadcrumbs={breadcrumbs}
+      />
+
+      {/* Visible Breadcrumbs */}
+      <Breadcrumbs items={breadcrumbs} />
+
       {/* Page Header & Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-wide">All Instant Games</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-wide">All Instant Games Catalog</h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Browse our complete collection of mobile-first web games.
+            Browse our complete collection of mobile-first instant web games.
           </p>
         </div>
 

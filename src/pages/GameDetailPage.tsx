@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Play, Heart, Star, Smartphone, Gamepad2, ArrowLeft, Trophy, Zap } from 'lucide-react';
+import { Play, Heart, Star, Smartphone, Gamepad2, Trophy, Zap, HelpCircle, CheckCircle2, ShieldCheck, Tag } from 'lucide-react';
 import { gameService } from '../services/GameService';
 import { storageService, type SavedGameState } from '../services/StorageService';
+import { CATEGORIES_LIST } from '../games/registry';
 import { Button } from '../components/common/Button';
 import { GameGrid } from '../components/game-ui/GameGrid';
 import { NotFoundPage } from './NotFoundPage';
-
 import { SEO } from '../components/common/SEO';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 
 export const GameDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -21,8 +22,9 @@ export const GameDetailPage: React.FC = () => {
     if (game) {
       setIsFav(storageService.isFavorite(game.id));
       storageService.loadGameState(game.id).then(setSaveState);
+      window.scrollTo(0, 0);
     }
-  }, [game]);
+  }, [game, slug]);
 
   if (!game) return <NotFoundPage />;
 
@@ -33,26 +35,41 @@ export const GameDetailPage: React.FC = () => {
   };
 
   const relatedGames = gameService.getRelatedGames(game.id, 4);
+  const categoryInfo = CATEGORIES_LIST.find(c => c.name.toLowerCase() === game.category.toLowerCase());
+  const categorySlug = categoryInfo?.slug || game.category.toLowerCase();
+
+  const breadcrumbs = [
+    { label: 'Games', url: '/games' },
+    { label: `${game.category} Games`, url: `/category/${categorySlug}` },
+    { label: game.title }
+  ];
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-8">
+      
+      {/* Dynamic Comprehensive Technical SEO */}
       <SEO
-        title={game.title}
-        description={game.description}
-        slug={game.slug}
-        category={game.category}
+        title={game.seoTitle || `Play ${game.title} Online Free`}
+        description={game.seoDescription || game.description}
+        path={`/games/${game.slug}`}
+        type="game"
+        breadcrumbs={breadcrumbs}
+        gameData={{
+          name: game.title,
+          description: game.description,
+          category: game.category,
+          rating: game.rating,
+          plays: game.plays
+        }}
       />
 
-      
-      {/* Back Link */}
-      <Link to="/games" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-cyan-400">
-        <ArrowLeft className="w-4 h-4" /> Back to Catalog
-      </Link>
+      {/* Visible Breadcrumb Navigation */}
+      <Breadcrumbs items={breadcrumbs} />
 
-      {/* Main Game Detail Hero Card */}
+      {/* Hero Section */}
       <div className="relative rounded-3xl overflow-hidden glass-card border border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6">
         
-        {/* Banner Artwork Header */}
+        {/* Banner Header */}
         <div 
           className="relative w-full aspect-[16/9] sm:aspect-[21/9] rounded-2xl overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-inner"
           style={{ background: game.thumbnailBg }}
@@ -67,22 +84,25 @@ export const GameDetailPage: React.FC = () => {
             {game.tagline}
           </p>
 
-          {/* Quick Play Floating Button Overlay */}
+          {/* Primary Play Button CTA */}
           <button
-            onClick={() => navigate(`/game/${game.slug}/play`)}
+            onClick={() => navigate(`/games/${game.slug}/play`)}
             className="mt-4 px-8 py-3.5 rounded-full bg-cyan-400 text-slate-950 font-black text-base flex items-center gap-2 shadow-xl shadow-cyan-400/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
           >
             <Play className="w-5 h-5 fill-slate-950" /> PLAY NOW
           </button>
         </div>
 
-        {/* Info & Action Controls */}
+        {/* Info Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 text-xs font-bold rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+              <Link 
+                to={`/category/${categorySlug}`}
+                className="px-3 py-1 text-xs font-bold rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+              >
                 {game.category}
-              </span>
+              </Link>
               <span className="px-3 py-1 text-xs font-bold rounded-full bg-slate-800 text-slate-300 flex items-center gap-1">
                 <Smartphone className="w-3.5 h-3.5 text-purple-400" /> {game.orientation.toUpperCase()} MODE
               </span>
@@ -91,12 +111,11 @@ export const GameDetailPage: React.FC = () => {
               </div>
             </div>
             <p className="text-xs text-slate-400 pt-1">
-              {(game.plays / 1000).toFixed(1)}k Total Plays • Save Supported
+              {(game.plays / 1000).toFixed(1)}k Total Plays • Save Supported • Free Instant Browser Game
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Favorite Toggle Button */}
             <Button
               variant={isFav ? 'secondary' : 'outline'}
               size="md"
@@ -106,11 +125,10 @@ export const GameDetailPage: React.FC = () => {
               {isFav ? 'Favorited' : 'Add Favorite'}
             </Button>
 
-            {/* Main Primary CTA Play Button */}
             <Button
               variant="primary"
               size="lg"
-              onClick={() => navigate(`/game/${game.slug}/play`)}
+              onClick={() => navigate(`/games/${game.slug}/play`)}
             >
               <Play className="w-5 h-5 fill-slate-950" /> START GAME
             </Button>
@@ -129,58 +147,111 @@ export const GameDetailPage: React.FC = () => {
                 <h4 className="text-xl font-black text-white">{saveState.highScore.toLocaleString()} pts</h4>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => navigate(`/game/${game.slug}/play`)}>
+            <Button variant="outline" size="sm" onClick={() => navigate(`/games/${game.slug}/play`)}>
               Beat Score
             </Button>
           </div>
         )}
 
-        {/* Description & Story */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-bold text-white">About {game.title}</h3>
+        {/* Structured Content: About */}
+        <section className="space-y-3 pt-2">
+          <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-cyan-400" /> About {game.title}
+          </h2>
           <p className="text-sm text-slate-300 leading-relaxed">{game.description}</p>
-        </div>
+        </section>
 
-        {/* How to Play & Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          
-          {/* Mobile Controls */}
-          <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
-            <h4 className="text-xs font-black text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Smartphone className="w-4 h-4" /> Touch Controls (Mobile)
-            </h4>
-            <ul className="space-y-1 text-xs text-slate-300">
-              {game.controls.mobile.map((ctrl, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                  {ctrl}
+        {/* Structured Content: How to Play */}
+        {game.howToPlay && game.howToPlay.length > 0 && (
+          <section className="space-y-3 pt-2 border-t border-slate-800/80">
+            <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" /> How to Play {game.title}
+            </h2>
+            <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
+              {game.howToPlay.map((step, idx) => (
+                <li key={idx} className="leading-relaxed">
+                  <span className="font-semibold text-slate-200">{step}</span>
                 </li>
               ))}
-            </ul>
-          </div>
+            </ol>
+          </section>
+        )}
 
-          {/* Desktop Controls */}
-          <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
-            <h4 className="text-xs font-black text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Gamepad2 className="w-4 h-4" /> Keyboard Controls (Desktop)
-            </h4>
-            <ul className="space-y-1 text-xs text-slate-300">
-              {game.controls.desktop.map((ctrl, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                  {ctrl}
-                </li>
+        {/* Structured Content: Controls */}
+        <section className="space-y-3 pt-2 border-t border-slate-800/80">
+          <h2 className="text-lg font-extrabold text-white">Game Controls</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Touch Controls */}
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <h3 className="text-xs font-black text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Smartphone className="w-4 h-4" /> Touch Controls (Mobile & Tablet)
+              </h3>
+              <ul className="space-y-1.5 text-xs text-slate-300">
+                {game.controls.mobile.map((ctrl, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                    {ctrl}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Keyboard Controls */}
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <h3 className="text-xs font-black text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Gamepad2 className="w-4 h-4" /> Keyboard & Mouse Controls (Desktop)
+              </h3>
+              <ul className="space-y-1.5 text-xs text-slate-300">
+                {game.controls.desktop.map((ctrl, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+                    {ctrl}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Structured Content: Game Features */}
+        {game.features && game.features.length > 0 && (
+          <section className="space-y-3 pt-2 border-t border-slate-800/80">
+            <h2 className="text-lg font-extrabold text-white">Key Features</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {game.features.map((feat, idx) => (
+                <div key={idx} className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-900/50 border border-slate-800/60 text-xs text-slate-200">
+                  <Tag className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>{feat}</span>
+                </div>
               ))}
-            </ul>
-          </div>
+            </div>
+          </section>
+        )}
 
-        </div>
+        {/* Structured Content: FAQ */}
+        {game.faqs && game.faqs.length > 0 && (
+          <section className="space-y-4 pt-2 border-t border-slate-800/80">
+            <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-amber-400" /> Frequently Asked Questions
+            </h2>
+            <div className="space-y-3">
+              {game.faqs.map((faq, idx) => (
+                <div key={idx} className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
+                  <h3 className="text-sm font-bold text-white">{faq.question}</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">{faq.answer}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
       </div>
 
-      {/* Related Games */}
-      <section className="pt-4">
-        <h3 className="text-xl font-extrabold text-white mb-4">You Might Also Like</h3>
+      {/* Related Games Internal Linking */}
+      <section className="pt-4 space-y-4">
+        <h3 className="text-xl font-extrabold text-white">More Free {game.category} Games</h3>
         <GameGrid games={relatedGames} />
       </section>
 

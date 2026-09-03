@@ -34,7 +34,7 @@ export const GameHero: React.FC<GameHeroProps> = ({ featuredGame }) => {
           {/* Action CTAs */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
             {featuredGame ? (
-              <Link to={`/game/${featuredGame.slug}/play`}>
+              <Link to={`/games/${featuredGame.slug}/play`}>
                 <Button variant="primary" size="lg">
                   <Play className="w-5 h-5 fill-slate-950" /> PLAY NOW
                 </Button>
@@ -58,7 +58,7 @@ export const GameHero: React.FC<GameHeroProps> = ({ featuredGame }) => {
         {/* Right Column Featured Card Preview */}
         {featuredGame && (
           <div className="md:col-span-5 hidden sm:block">
-            <Link to={`/game/${featuredGame.slug}`} className="group relative block rounded-2xl overflow-hidden border border-slate-700/60 shadow-xl">
+            <Link to={`/games/${featuredGame.slug}`} className="group relative block rounded-2xl overflow-hidden border border-slate-700/60 shadow-xl">
               <div 
                 className="aspect-[16/10] w-full flex flex-col items-center justify-center p-6 text-center group-hover:scale-105 transition-transform duration-500"
                 style={{ background: featuredGame.thumbnailBg }}

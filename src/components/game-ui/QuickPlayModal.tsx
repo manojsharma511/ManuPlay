@@ -22,7 +22,7 @@ export const QuickPlayModal: React.FC<QuickPlayModalProps> = ({ isOpen, onClose 
     const random = pool[Math.floor(Math.random() * pool.length)];
     if (random) {
       onClose();
-      navigate(`/game/${random.slug}/play`);
+      navigate(`/games/${random.slug}/play`);
     }
   };
 

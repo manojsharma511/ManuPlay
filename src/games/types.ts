@@ -14,6 +14,11 @@ export type GameCategory =
 
 export type GameOrientation = 'portrait' | 'landscape' | 'any';
 
+export interface GameFAQ {
+  question: string;
+  answer: string;
+}
+
 export interface GameDefinition {
   id: string;
   slug: string;
@@ -42,5 +47,13 @@ export interface GameDefinition {
     desktop: string[];
     mobile: string[];
   };
+  // Extended SEO & Content fields
+  seoTitle?: string;
+  seoDescription?: string;
+  howToPlay?: string[];
+  features?: string[];
+  faqs?: GameFAQ[];
+  relatedGameSlugs?: string[];
+  heroImage?: string;
+  ogImage?: string;
 }
-

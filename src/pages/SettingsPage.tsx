@@ -4,6 +4,7 @@ import { storageService, type UserPreferences } from '../services/StorageService
 import { userService } from '../services/UserService';
 import { audioService } from '../services/AudioService';
 import { Button } from '../components/common/Button';
+import { SEO } from '../components/common/SEO';
 
 export const SettingsPage: React.FC = () => {
   const [prefs, setPrefs] = useState<UserPreferences>(() => storageService.getPreferences());
@@ -33,6 +34,12 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <SEO
+        title="Platform Settings"
+        description="Manage audio, haptics, graphics, and local preferences."
+        path="/settings"
+        noindex={true}
+      />
       
       {/* Page Header */}
       <div className="border-b border-slate-800 pb-4">

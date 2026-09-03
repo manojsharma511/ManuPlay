@@ -7,6 +7,8 @@ import type { GameDefinition } from '../games/types';
 import { GameGrid } from '../components/game-ui/GameGrid';
 import { EmptyState } from '../components/common/EmptyState';
 
+import { SEO } from '../components/common/SEO';
+
 export const FavoritesPage: React.FC = () => {
   const navigate = useNavigate();
   const [favGames, setFavGames] = useState<GameDefinition[]>([]);
@@ -24,6 +26,13 @@ export const FavoritesPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      
+      <SEO
+        title="My Favorites"
+        description="Your favorite saved games on ManuPlay."
+        path="/favorites"
+        noindex={true}
+      />
       
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-800 pb-4">

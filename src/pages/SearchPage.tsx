@@ -6,6 +6,8 @@ import { analyticsService } from '../services/AnalyticsService';
 import { GameGrid } from '../components/game-ui/GameGrid';
 import { EmptyState } from '../components/common/EmptyState';
 
+import { SEO } from '../components/common/SEO';
+
 const POPULAR_SEARCH_TAGS = ['Racing', 'Zombie', 'Puzzle', 'Runner', 'Shooter', 'Cyberpunk', 'Space'];
 
 export const SearchPage: React.FC = () => {
@@ -34,6 +36,13 @@ export const SearchPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      
+      <SEO
+        title={query ? `Search Results for "${query}"` : "Search Free Online Games"}
+        description="Search ManuPlay games catalog."
+        path="/search"
+        noindex={true}
+      />
       
       {/* Search Input Hero Header */}
       <div className="relative w-full max-w-2xl mx-auto text-center space-y-4">
