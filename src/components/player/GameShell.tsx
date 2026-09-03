@@ -19,22 +19,8 @@ import { HowToPlayModal } from '../game-ui/HowToPlayModal';
 import { TutorialOverlay, type TutorialStep } from '../game-ui/TutorialOverlay';
 import { ContextualHint } from '../game-ui/ContextualHint';
 
-// Existing Game Module Imports
-import { NeonDriftGame } from '../../games/neon-drift/NeonDriftGame';
-import { SkyRunnerGame } from '../../games/sky-runner/SkyRunnerGame';
-import { ZombieSurvivalGame } from '../../games/zombie-survival/ZombieSurvivalGame';
-import { BlockPuzzleGame } from '../../games/block-puzzle/BlockPuzzleGame';
-import { SpaceShooterGame } from '../../games/space-shooter/SpaceShooterGame';
-import { TowerDefenseGame } from '../../games/tower-defense/TowerDefenseGame';
-import { HoopMasterGame } from '../../games/hoop-master/HoopMasterGame';
-import { CyberMemoryGame } from '../../games/cyber-memory/CyberMemoryGame';
-import { NeonWingsGame } from '../../games/neon-wings/NeonWingsGame';
-import { TrafficRushGame } from '../../games/traffic-rush/TrafficRushGame';
-import { ColorSortGame } from '../../games/color-sort/ColorSortGame';
-import { DualArenaGame } from '../../games/dual-arena/DualArenaGame';
-import { MiniGolfGame } from '../../games/mini-golf/MiniGolfGame';
-import { CricketSmashGame } from '../../games/cricket-smash/CricketSmashGame';
-import { PenaltyShootoutGame } from '../../games/penalty-shootout/PenaltyShootoutGame';
+// Dynamic game loading is handled via game.loadEngine() factory
+
 
 interface GameShellProps {
   game: GameDefinition;
@@ -187,7 +173,7 @@ export const GameShell: React.FC<GameShellProps> = ({ game }) => {
     startGameEngine();
   };
 
-  const startGameEngine = () => {
+  const startGameEngine = async () => {
     if (!canvasRef.current) return;
 
     try {
@@ -206,57 +192,15 @@ export const GameShell: React.FC<GameShellProps> = ({ game }) => {
         setScore(currentScore);
       };
 
-      switch (game.id) {
-        case 'neon-drift':
-          gameInstanceRef.current = new NeonDriftGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'sky-runner':
-          gameInstanceRef.current = new SkyRunnerGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'zombie-survival':
-          gameInstanceRef.current = new ZombieSurvivalGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'block-puzzle':
-          gameInstanceRef.current = new BlockPuzzleGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'space-shooter':
-          gameInstanceRef.current = new SpaceShooterGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'tower-defense':
-          gameInstanceRef.current = new TowerDefenseGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'hoop-master':
-          gameInstanceRef.current = new HoopMasterGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'cyber-memory':
-          gameInstanceRef.current = new CyberMemoryGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'neon-wings':
-          gameInstanceRef.current = new NeonWingsGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'traffic-rush':
-          gameInstanceRef.current = new TrafficRushGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'color-sort':
-          gameInstanceRef.current = new ColorSortGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'dual-arena':
-          gameInstanceRef.current = new DualArenaGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'mini-golf':
-          gameInstanceRef.current = new MiniGolfGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'cricket-smash':
-          gameInstanceRef.current = new CricketSmashGame(handleGameOver, handleScoreUpdate);
-          break;
-        case 'penalty-shootout':
-          gameInstanceRef.current = new PenaltyShootoutGame(handleGameOver, handleScoreUpdate);
-          break;
-        default:
-          gameInstanceRef.current = new NeonDriftGame(handleGameOver, handleScoreUpdate);
-          break;
+      let GameEngineClass: any = null;
+      if (game.loadEngine) {
+        GameEngineClass = await game.loadEngine();
+      } else {
+        const mod = await import('../../games/neon-drift/NeonDriftGame');
+        GameEngineClass = mod.NeonDriftGame;
       }
 
+      gameInstanceRef.current = new GameEngineClass(handleGameOver, handleScoreUpdate);
       gameInstanceRef.current.init(canvasRef.current);
     } catch (err) {
       console.error('Failed to initialize game engine:', err);

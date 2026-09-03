@@ -7,6 +7,8 @@ import { Button } from '../components/common/Button';
 import { GameGrid } from '../components/game-ui/GameGrid';
 import { NotFoundPage } from './NotFoundPage';
 
+import { SEO } from '../components/common/SEO';
+
 export const GameDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -34,6 +36,13 @@ export const GameDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-8">
+      <SEO
+        title={game.title}
+        description={game.description}
+        slug={game.slug}
+        category={game.category}
+      />
+
       
       {/* Back Link */}
       <Link to="/games" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-cyan-400">
