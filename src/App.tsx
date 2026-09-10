@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
-import { Analytics } from '@vercel/analytics/react';
 import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
 import { GamesPage } from './pages/GamesPage';
@@ -8,6 +7,8 @@ import { CategoryPage } from './pages/CategoryPage';
 import { GameDetailPage } from './pages/GameDetailPage';
 import { GamePlayPage } from './pages/GamePlayPage';
 import { LandingPage } from './pages/LandingPage';
+import { BlogPage } from './pages/BlogPage';
+import { BlogPostPage } from './pages/BlogPostPage';
 import { InfoPage } from './pages/InfoPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { RecentPage } from './pages/RecentPage';
@@ -39,6 +40,8 @@ export function App() {
           <Route path="games/:slug" element={<GameDetailPage />} />
           <Route path="games/:slug/play" element={<GamePlayPage />} />
           <Route path="category/:slug" element={<CategoryPage />} />
+          <Route path="blog" element={<BlogPage />} />
+          <Route path="blog/:slug" element={<BlogPostPage />} />
           
           {/* High-Intent SEO Landing Pages */}
           <Route path="online-games" element={<LandingPage />} />
@@ -71,7 +74,6 @@ export function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
-      <Analytics />
     </BrowserRouter>
   );
 }

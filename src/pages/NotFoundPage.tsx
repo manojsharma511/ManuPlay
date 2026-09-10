@@ -2,10 +2,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Gamepad2, ArrowLeft, Play } from 'lucide-react';
 import { Button } from '../components/common/Button';
+import { SEO } from '../components/common/SEO';
 
 export const NotFoundPage: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-6 flex flex-col items-center justify-center min-h-[70vh]">
+      <SEO
+        title="404 Page Not Found"
+        description="The requested stage or URL was not found on ManuPlay."
+        noindex={true}
+      />
       
       {/* 404 Glitch Badge */}
       <div className="relative w-28 h-28 flex items-center justify-center">

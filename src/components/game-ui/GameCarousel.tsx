@@ -25,9 +25,9 @@ export const GameCarousel: React.FC<GameCarouselProps> = ({
         {actionLink}
       </div>
 
-      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         {games.map((game) => (
-          <div key={game.id} className="w-[60vw] max-w-[220px] shrink-0 snap-start">
+          <div key={game.id} className="w-[68vw] sm:w-[230px] shrink-0 snap-start">
             <GameCard game={game} />
           </div>
         ))}

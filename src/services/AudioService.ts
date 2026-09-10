@@ -207,6 +207,26 @@ class AudioService {
     });
   }
 
+  public playSfx(type: 'pop' | 'powerup' | 'win' | 'gameover' | 'click' | 'coin' | 'explosion') {
+    switch (type) {
+      case 'pop':
+      case 'click':
+        this.playClick();
+        break;
+      case 'powerup':
+      case 'coin':
+        this.playCoin();
+        break;
+      case 'win':
+        this.playJump();
+        break;
+      case 'gameover':
+      case 'explosion':
+        this.playGameOver();
+        break;
+    }
+  }
+
   // Synth Background Music Loop
   public startSynthMusic(theme: 'racing' | 'runner' | 'action' | 'puzzle' | 'arcade' | 'sports' = 'arcade') {
     this.stopSynthMusic();

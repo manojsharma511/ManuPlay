@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Heart, Flame, Gamepad2, Sparkles, User, Trophy } from 'lucide-react';
+import { Search, Heart, Flame, Gamepad2, Sparkles, User, Trophy, BookOpen } from 'lucide-react';
 import { storageService } from '../../services/StorageService';
 import { userService } from '../../services/UserService';
 import { progressionService } from '../../services/ProgressionService';
@@ -34,6 +34,7 @@ export const Header: React.FC = () => {
     { label: 'Home', path: '/', icon: Sparkles },
     { label: 'Games', path: '/games', icon: Gamepad2 },
     { label: 'Trending', path: '/trending', icon: Flame },
+    { label: 'Blog', path: '/blog', icon: BookOpen },
     { label: 'Leaderboards', path: '/leaderboards', icon: Trophy },
     { label: 'Favorites', path: '/favorites', icon: Heart, badge: favCount },
   ];
@@ -41,15 +42,11 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 safe-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        
+
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2.5 group select-none">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 p-0.5 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform duration-200">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <span className="font-extrabold text-lg tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
-                M
-              </span>
-            </div>
+          <div className="w-10 h-10 rounded-xl bg-slate-950 p-0.5 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform duration-200 flex items-center justify-center">
+            <img src="/logo.png" alt="ManuPlay" className="w-full h-full object-contain rounded-lg" />
           </div>
           <div className="flex flex-col">
             <span className="font-black text-xl tracking-wider text-white group-hover:text-cyan-400 transition-colors">
@@ -82,11 +79,10 @@ export const Header: React.FC = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`relative px-3.5 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all ${
-                  isActive
+                className={`relative px-3.5 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all ${isActive
                     ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/30'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {link.label}
@@ -103,7 +99,7 @@ export const Header: React.FC = () => {
         {/* Action Controls & Mobile Icons */}
         <div className="flex items-center gap-2">
           {/* ManuCoins Currency Badge */}
-          <div className="hidden sm:block">
+          <div className="flex shrink-0">
             <ManuCoinsBadge />
           </div>
 

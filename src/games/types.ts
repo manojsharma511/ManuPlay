@@ -47,6 +47,10 @@ export interface GameDefinition {
     desktop: string[];
     mobile: string[];
   };
+  // Extended Level & Progression fields
+  totalLevels?: number;
+  hasLevels?: boolean;
+  levelType?: 'procedural' | 'handcrafted' | 'milestones';
   // Extended SEO & Content fields
   seoTitle?: string;
   seoDescription?: string;
@@ -55,5 +59,6 @@ export interface GameDefinition {
   faqs?: GameFAQ[];
   relatedGameSlugs?: string[];
   heroImage?: string;
+  coverImage?: string;
   ogImage?: string;
 }

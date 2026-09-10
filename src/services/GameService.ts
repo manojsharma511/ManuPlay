@@ -10,8 +10,14 @@ export interface GameFilterOptions {
   limit?: number;
 }
 
+const enrichedCache = new Map<string, GameDefinition>();
+
 function enrichGameSEO(game: GameDefinition): GameDefinition {
-  const seoTitle = game.seoTitle || `Play ${game.title} Online Free | ManuPlay`;
+  if (enrichedCache.has(game.id)) {
+    return enrichedCache.get(game.id)!;
+  }
+
+  const seoTitle = game.seoTitle || `${game.title} – Play Online Free | ManuPlay`;
   const seoDescription = game.seoDescription || `Play ${game.title} online for free on ManuPlay. ${game.description} No downloads, zero ads, instant action on mobile and desktop.`;
   
   const howToPlay = game.howToPlay && game.howToPlay.length > 0 ? game.howToPlay : [
@@ -43,7 +49,7 @@ function enrichGameSEO(game: GameDefinition): GameDefinition {
     }
   ];
 
-  return {
+  const enriched: GameDefinition = {
     ...game,
     seoTitle,
     seoDescription,
@@ -51,6 +57,9 @@ function enrichGameSEO(game: GameDefinition): GameDefinition {
     features,
     faqs
   };
+
+  enrichedCache.set(game.id, enriched);
+  return enriched;
 }
 
 class GameService {

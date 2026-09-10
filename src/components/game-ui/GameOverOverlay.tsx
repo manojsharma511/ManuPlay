@@ -13,6 +13,7 @@ interface GameOverOverlayProps {
   score: number;
   gameId: string;
   onRestart: () => void;
+  onReconfigure?: () => void;
   onMoreGames: () => void;
   onHome: () => void;
 }
@@ -21,6 +22,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
   score,
   gameId,
   onRestart,
+  onReconfigure,
   onMoreGames,
   onHome
 }) => {
@@ -120,6 +122,12 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
           <Button variant="primary" size="lg" fullWidth onClick={onRestart}>
             <RotateCcw className="w-5 h-5" /> PLAY AGAIN
           </Button>
+
+          {onReconfigure && (
+            <Button variant="outline" size="md" fullWidth onClick={onReconfigure}>
+              <Zap className="w-4 h-4 text-cyan-400" /> CHANGE OVERS & TARGET
+            </Button>
+          )}
 
           <Button variant="secondary" size="md" fullWidth onClick={onMoreGames}>
             <Sparkles className="w-4 h-4" /> MORE GAMES

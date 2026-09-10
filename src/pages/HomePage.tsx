@@ -88,6 +88,25 @@ export const HomePage: React.FC = () => {
       {/* Hero Section */}
       <GameHero featuredGame={featuredGame} />
 
+      {/* Mobile-Friendly Category Navigation Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-2 -mx-4 px-4 sm:mx-0 sm:px-0 select-none">
+        <Link
+          to="/games"
+          className="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black text-xs uppercase tracking-wider shrink-0 shadow-md shadow-cyan-500/25 active:scale-95 transition-transform"
+        >
+          ⚡ All Games
+        </Link>
+        {CATEGORIES_LIST.map((cat) => (
+          <Link
+            key={cat.slug}
+            to={`/category/${cat.slug}`}
+            className="px-3.5 py-2 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-extrabold text-xs shrink-0 flex items-center gap-1.5 transition-all active:scale-95"
+          >
+            <span>{cat.name}</span>
+          </Link>
+        ))}
+      </div>
+
       {/* Continue Playing (If recent games exist) */}
       {recentGames.length > 0 && (
         <GameCarousel

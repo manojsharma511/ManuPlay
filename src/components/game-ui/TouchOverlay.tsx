@@ -38,46 +38,46 @@ export const TouchOverlay: React.FC<TouchOverlayProps> = ({ onPause, gameId }) =
 
   const mode = getControlMode();
 
-  const handleTouchStart = (action: ControlAction) => (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
+  const handlePointerDown = (action: ControlAction) => (e: React.PointerEvent) => {
+    e.stopPropagation();
     inputService.setVirtualButton(action, true);
     storageService.triggerHaptic('light');
   };
 
-  const handleTouchEnd = (action: ControlAction) => (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
+  const handlePointerUp = (action: ControlAction) => (e: React.PointerEvent) => {
+    e.stopPropagation();
     inputService.setVirtualButton(action, false);
   };
 
   // Virtual Joystick Handlers
-  const handleJoystickTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
+  const handleJoystickPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
     setIsJoystickActive(true);
-    updateJoystick(e.touches[0]);
+    updateJoystick(e.clientX, e.clientY);
   };
 
-  const handleJoystickTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
+  const handleJoystickPointerMove = (e: React.PointerEvent) => {
+    e.stopPropagation();
     if (!isJoystickActive) return;
-    updateJoystick(e.touches[0]);
+    updateJoystick(e.clientX, e.clientY);
   };
 
-  const handleJoystickTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
+  const handleJoystickPointerUp = (e: React.PointerEvent) => {
+    e.stopPropagation();
     setIsJoystickActive(false);
     setJoystickPos({ x: 0, y: 0 });
     inputService.setJoystickVector(0, 0, false);
   };
 
-  const updateJoystick = (touch: React.Touch) => {
+  const updateJoystick = (clientX: number, clientY: number) => {
     if (!joystickRef.current) return;
     const rect = joystickRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
     const maxRadius = rect.width / 2;
-    let dx = touch.clientX - centerX;
-    let dy = touch.clientY - centerY;
+    let dx = clientX - centerX;
+    let dy = clientY - centerY;
 
     const dist = Math.hypot(dx, dy);
     if (dist > maxRadius) {
@@ -115,20 +115,20 @@ export const TouchOverlay: React.FC<TouchOverlayProps> = ({ onPause, gameId }) =
             {/* Left/Right Steering */}
             <div className="flex items-center gap-3">
               <button
-                onTouchStart={handleTouchStart('left')}
-                onTouchEnd={handleTouchEnd('left')}
-                onMouseDown={handleTouchStart('left')}
-                onMouseUp={handleTouchEnd('left')}
-                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-cyan-500/60 text-cyan-400 backdrop-blur-md active:bg-cyan-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-all"
+                onPointerDown={handlePointerDown('left')}
+                onPointerUp={handlePointerUp('left')}
+                onPointerLeave={handlePointerUp('left')}
+                onPointerCancel={handlePointerUp('left')}
+                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-cyan-500/60 text-cyan-400 backdrop-blur-md active:bg-cyan-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-all cursor-pointer"
               >
                 <ChevronLeft className="w-9 h-9" />
               </button>
               <button
-                onTouchStart={handleTouchStart('right')}
-                onTouchEnd={handleTouchEnd('right')}
-                onMouseDown={handleTouchStart('right')}
-                onMouseUp={handleTouchEnd('right')}
-                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-cyan-500/60 text-cyan-400 backdrop-blur-md active:bg-cyan-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-all"
+                onPointerDown={handlePointerDown('right')}
+                onPointerUp={handlePointerUp('right')}
+                onPointerLeave={handlePointerUp('right')}
+                onPointerCancel={handlePointerUp('right')}
+                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-cyan-500/60 text-cyan-400 backdrop-blur-md active:bg-cyan-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-all cursor-pointer"
               >
                 <ChevronRight className="w-9 h-9" />
               </button>
@@ -137,21 +137,21 @@ export const TouchOverlay: React.FC<TouchOverlayProps> = ({ onPause, gameId }) =
             {/* Brake & Boost */}
             <div className="flex items-center gap-3">
               <button
-                onTouchStart={handleTouchStart('brake')}
-                onTouchEnd={handleTouchEnd('brake')}
-                onMouseDown={handleTouchStart('brake')}
-                onMouseUp={handleTouchEnd('brake')}
-                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-red-500/60 text-red-400 backdrop-blur-md active:bg-red-500/40 flex flex-col items-center justify-center font-black text-[10px] shadow-xl active:scale-90 transition-all"
+                onPointerDown={handlePointerDown('brake')}
+                onPointerUp={handlePointerUp('brake')}
+                onPointerLeave={handlePointerUp('brake')}
+                onPointerCancel={handlePointerUp('brake')}
+                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-red-500/60 text-red-400 backdrop-blur-md active:bg-red-500/40 flex flex-col items-center justify-center font-black text-[10px] shadow-xl active:scale-90 transition-all cursor-pointer"
               >
                 <Shield className="w-6 h-6 mb-0.5" />
                 <span>BRAKE</span>
               </button>
               <button
-                onTouchStart={handleTouchStart('boost')}
-                onTouchEnd={handleTouchEnd('boost')}
-                onMouseDown={handleTouchStart('boost')}
-                onMouseUp={handleTouchEnd('boost')}
-                className="w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-2 border-white/50 text-slate-950 shadow-2xl shadow-cyan-500/50 active:scale-90 transition-transform flex flex-col items-center justify-center font-black text-xs"
+                onPointerDown={handlePointerDown('boost')}
+                onPointerUp={handlePointerUp('boost')}
+                onPointerLeave={handlePointerUp('boost')}
+                onPointerCancel={handlePointerUp('boost')}
+                className="w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-2 border-white/50 text-slate-950 shadow-2xl shadow-cyan-500/50 active:scale-90 transition-transform flex flex-col items-center justify-center font-black text-xs cursor-pointer"
               >
                 <Zap className="w-8 h-8 fill-slate-950" />
                 <span>BOOST</span>
@@ -166,14 +166,15 @@ export const TouchOverlay: React.FC<TouchOverlayProps> = ({ onPause, gameId }) =
             {/* Joystick Pad */}
             <div
               ref={joystickRef}
-              onTouchStart={handleJoystickTouchStart}
-              onTouchMove={handleJoystickTouchMove}
-              onTouchEnd={handleJoystickTouchEnd}
-              className="relative w-36 h-36 rounded-full bg-slate-900/60 border-2 border-cyan-500/40 backdrop-blur-md flex items-center justify-center shadow-2xl touch-none"
+              onPointerDown={handleJoystickPointerDown}
+              onPointerMove={handleJoystickPointerMove}
+              onPointerUp={handleJoystickPointerUp}
+              onPointerCancel={handleJoystickPointerUp}
+              className="relative w-36 h-36 rounded-full bg-slate-900/60 border-2 border-cyan-500/40 backdrop-blur-md flex items-center justify-center shadow-2xl touch-none cursor-pointer"
             >
               {/* Inner Thumb Knob */}
               <div
-                className="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-2 border-white/60 shadow-lg transition-transform duration-75"
+                className="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-2 border-white/60 shadow-lg transition-transform duration-75 pointer-events-none"
                 style={{
                   transform: `translate(${joystickPos.x}px, ${joystickPos.y}px)`
                 }}
@@ -183,11 +184,11 @@ export const TouchOverlay: React.FC<TouchOverlayProps> = ({ onPause, gameId }) =
             {/* Fire / Action Button */}
             <div className="flex items-center gap-3">
               <button
-                onTouchStart={handleTouchStart('action1')}
-                onTouchEnd={handleTouchEnd('action1')}
-                onMouseDown={handleTouchStart('action1')}
-                onMouseUp={handleTouchEnd('action1')}
-                className="w-22 h-22 rounded-full bg-gradient-to-tr from-pink-500 via-rose-600 to-purple-600 border-2 border-white/50 text-white shadow-2xl shadow-pink-500/50 active:scale-90 transition-transform flex flex-col items-center justify-center font-black text-xs"
+                onPointerDown={handlePointerDown('action1')}
+                onPointerUp={handlePointerUp('action1')}
+                onPointerLeave={handlePointerUp('action1')}
+                onPointerCancel={handlePointerUp('action1')}
+                className="w-22 h-22 rounded-full bg-gradient-to-tr from-pink-500 via-rose-600 to-purple-600 border-2 border-white/50 text-white shadow-2xl shadow-pink-500/50 active:scale-90 transition-transform flex flex-col items-center justify-center font-black text-xs cursor-pointer"
               >
                 <Zap className="w-9 h-9 fill-white" />
                 <span>FIRE</span>
@@ -200,22 +201,22 @@ export const TouchOverlay: React.FC<TouchOverlayProps> = ({ onPause, gameId }) =
         {mode === 'runner' && (
           <div className="w-full flex items-center justify-between">
             <button
-              onTouchStart={handleTouchStart('down')}
-              onTouchEnd={handleTouchEnd('down')}
-              onMouseDown={handleTouchStart('down')}
-              onMouseUp={handleTouchEnd('down')}
-              className="w-20 h-20 rounded-2xl bg-slate-900/80 border-2 border-purple-500/60 text-purple-300 backdrop-blur-md flex flex-col items-center justify-center font-black text-xs shadow-xl active:scale-90 transition-all"
+              onPointerDown={handlePointerDown('down')}
+              onPointerUp={handlePointerUp('down')}
+              onPointerLeave={handlePointerUp('down')}
+              onPointerCancel={handlePointerUp('down')}
+              className="w-20 h-20 rounded-2xl bg-slate-900/80 border-2 border-purple-500/60 text-purple-300 backdrop-blur-md flex flex-col items-center justify-center font-black text-xs shadow-xl active:scale-90 transition-all cursor-pointer"
             >
               <ArrowDown className="w-8 h-8" />
               <span>SLIDE</span>
             </button>
 
             <button
-              onTouchStart={handleTouchStart('action1')}
-              onTouchEnd={handleTouchEnd('action1')}
-              onMouseDown={handleTouchStart('action1')}
-              onMouseUp={handleTouchEnd('action1')}
-              className="w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-2 border-white/60 text-slate-950 shadow-2xl shadow-cyan-500/50 active:scale-90 transition-transform flex flex-col items-center justify-center font-black text-sm"
+              onPointerDown={handlePointerDown('action1')}
+              onPointerUp={handlePointerUp('action1')}
+              onPointerLeave={handlePointerUp('action1')}
+              onPointerCancel={handlePointerUp('action1')}
+              className="w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-2 border-white/60 text-slate-950 shadow-2xl shadow-cyan-500/50 active:scale-90 transition-transform flex flex-col items-center justify-center font-black text-sm cursor-pointer"
             >
               <ArrowUp className="w-9 h-9 stroke-[3]" />
               <span>JUMP</span>
@@ -228,20 +229,20 @@ export const TouchOverlay: React.FC<TouchOverlayProps> = ({ onPause, gameId }) =
           <>
             <div className="flex items-center gap-2">
               <button
-                onTouchStart={handleTouchStart('left')}
-                onTouchEnd={handleTouchEnd('left')}
-                onMouseDown={handleTouchStart('left')}
-                onMouseUp={handleTouchEnd('left')}
-                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-cyan-500/60 text-cyan-400 backdrop-blur-md active:bg-cyan-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-all"
+                onPointerDown={handlePointerDown('left')}
+                onPointerUp={handlePointerUp('left')}
+                onPointerLeave={handlePointerUp('left')}
+                onPointerCancel={handlePointerUp('left')}
+                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-cyan-500/60 text-cyan-400 backdrop-blur-md active:bg-cyan-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-all cursor-pointer"
               >
                 <ChevronLeft className="w-8 h-8" />
               </button>
               <button
-                onTouchStart={handleTouchStart('right')}
-                onTouchEnd={handleTouchEnd('right')}
-                onMouseDown={handleTouchStart('right')}
-                onMouseUp={handleTouchEnd('right')}
-                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-cyan-500/60 text-cyan-400 backdrop-blur-md active:bg-cyan-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-all"
+                onPointerDown={handlePointerDown('right')}
+                onPointerUp={handlePointerUp('right')}
+                onPointerLeave={handlePointerUp('right')}
+                onPointerCancel={handlePointerUp('right')}
+                className="w-16 h-16 rounded-2xl bg-slate-900/80 border-2 border-cyan-500/60 text-cyan-400 backdrop-blur-md active:bg-cyan-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-all cursor-pointer"
               >
                 <ChevronRight className="w-8 h-8" />
               </button>
@@ -249,11 +250,11 @@ export const TouchOverlay: React.FC<TouchOverlayProps> = ({ onPause, gameId }) =
 
             <div className="flex items-center gap-3">
               <button
-                onTouchStart={handleTouchStart('action1')}
-                onTouchEnd={handleTouchEnd('action1')}
-                onMouseDown={handleTouchStart('action1')}
-                onMouseUp={handleTouchEnd('action1')}
-                className="w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-2 border-white/40 text-slate-950 shadow-xl shadow-cyan-500/40 active:scale-90 transition-transform flex flex-col items-center justify-center font-black text-xs"
+                onPointerDown={handlePointerDown('action1')}
+                onPointerUp={handlePointerUp('action1')}
+                onPointerLeave={handlePointerUp('action1')}
+                onPointerCancel={handlePointerUp('action1')}
+                className="w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-2 border-white/40 text-slate-950 shadow-xl shadow-cyan-500/40 active:scale-90 transition-transform flex flex-col items-center justify-center font-black text-xs cursor-pointer"
               >
                 <Zap className="w-8 h-8 fill-slate-950" />
                 <span>ACTION</span>

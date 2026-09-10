@@ -1,202 +1,15 @@
 import fs from 'fs';
 import path from 'path';
+import { GAMES_CATALOG, CATEGORIES_LIST } from '../src/games/registry.js';
+import { BLOG_POSTS } from '../src/data/blogData.js';
 
-// Define Site Configuration
-const SITE_DOMAIN = 'https://manuplay.vercel.app/';
+// Define Site Configuration (Strict single Vercel domain without trailing slash to prevent double slash //)
+const SITE_DOMAIN = 'https://manuplay.vercel.app';
 const SITE_NAME = 'ManuPlay';
 const DEFAULT_OG_IMAGE = `${SITE_DOMAIN}/og-image.png`;
 
-// Raw Games Data for static build rendering
-const GAMES = [
-  {
-    slug: 'manu-kart',
-    title: 'Manu Kart',
-    tagline: 'Flagship 2D/3D highway kart racing with drift & powerups.',
-    description: 'ManuPlay flagship racer! Outmaneuver rival AI karts, hit speed boosters, collect nitro cans, trigger powerups, and set record lap times across futuristic neon tracks.',
-    category: 'Racing',
-    plays: 285000,
-    rating: 5.0
-  },
-  {
-    slug: 'chess',
-    title: 'Chess Master',
-    tagline: 'Classic chess with smart AI & local 2-player modes.',
-    description: 'Challenge your mind with grandmaster strategy! Play against adaptive AI or duel a friend on the same screen with full move validation, blitz timers, and puzzle challenges.',
-    category: 'Board',
-    plays: 195000,
-    rating: 4.9
-  },
-  {
-    slug: '8ball-pool',
-    title: '8 Ball Pool',
-    tagline: 'Realistic physics cue ball pocketing challenge.',
-    description: 'Master cue ball trajectory and spin! Drag back to aim, adjust power, and sink target balls into 6 pockets with realistic cushion reflection physics.',
-    category: 'Sports',
-    plays: 230000,
-    rating: 4.9
-  },
-  {
-    slug: 'trivia-battle',
-    title: 'Trivia Battle',
-    tagline: 'Real-time quiz across Gaming, Science, Tech & Sports.',
-    description: 'Test your knowledge against the clock! Answer questions across popular categories, build answer streak multipliers, and earn massive XP rewards.',
-    category: 'Trivia',
-    plays: 162000,
-    rating: 4.8
-  },
-  {
-    slug: 'neon-drift',
-    title: 'Neon Drift',
-    tagline: 'High-speed cyberpunk highway racing with instant nitro boosts.',
-    description: 'Hit the neon-drenched highway at night! Dodge speeding traffic, collect energy power-ups, boost through speed traps, and see how long you can survive the endless drift.',
-    category: 'Racing',
-    plays: 142500,
-    rating: 4.9
-  },
-  {
-    slug: 'sky-runner',
-    title: 'Sky Runner',
-    tagline: 'Leap across cyber platforms high above the clouds.',
-    description: 'Precision endless platform runner set in a glowing futuristic skyline. Time your jumps and double jumps to scale floating platforms, collect plasma orbs, and avoid laser spikes!',
-    category: 'Action',
-    plays: 98400,
-    rating: 4.8
-  },
-  {
-    slug: 'zombie-survival',
-    title: 'Zombie Survival',
-    tagline: 'Top-down neon wave survival shooter.',
-    description: 'Survive relentless waves of neon cyber-zombies in a localized arena! Move swiftly, manage your ammunition, collect health medkits, and clear every wave before you get overwhelmed.',
-    category: 'Action',
-    plays: 112000,
-    rating: 4.7
-  },
-  {
-    slug: 'cricket-smash',
-    title: 'Cricket Smash',
-    tagline: 'Fast-paced T20 cricket batting challenge.',
-    description: 'Step up to the crease and smash Sixes! Time your shots against fast bowlers and spinners, hit target zones, and build massive inning totals.',
-    category: 'Sports',
-    plays: 210000,
-    rating: 4.9
-  },
-  {
-    slug: 'penalty-shootout',
-    title: 'Penalty Shootout',
-    tagline: 'Precision soccer penalty kick duel.',
-    description: 'Flick shoot past the keeper! Swipe to curve your shots, hit top-corner targets, and score golden goal penalties.',
-    category: 'Sports',
-    plays: 185000,
-    rating: 4.8
-  },
-  {
-    slug: 'color-sort',
-    title: 'Color Sort',
-    tagline: 'Relaxing liquid color tube sorting puzzle.',
-    description: 'Pour and match colored liquids into matching test tubes. Plan your moves carefully to solve hundreds of brain-teasing levels.',
-    category: 'Puzzle',
-    plays: 155000,
-    rating: 4.7
-  },
-  {
-    slug: 'block-puzzle',
-    title: 'Block Puzzle',
-    tagline: 'Addictive grid block placement challenge.',
-    description: 'Fit neon polyomino blocks into the 8x8 grid to clear full lines and triggers combos.',
-    category: 'Puzzle',
-    plays: 175000,
-    rating: 4.8
-  },
-  {
-    slug: 'cyber-memory',
-    title: 'Cyber Memory',
-    tagline: 'Futuristic card flip brain training.',
-    description: 'Match pairs of cyber icons before time runs out. Test and improve your short-term visual memory.',
-    category: 'Puzzle',
-    plays: 89000,
-    rating: 4.6
-  },
-  {
-    slug: 'hoop-master',
-    title: 'Hoop Master',
-    tagline: 'Arcade basketball shooting challenge.',
-    description: 'Swipe to shoot hoops against moving backboards. Build streak multipliers and unlock fire balls.',
-    category: 'Sports',
-    plays: 130000,
-    rating: 4.8
-  },
-  {
-    slug: 'space-shooter',
-    title: 'Space Shooter',
-    tagline: 'Classic vertical arcade space galaxy defender.',
-    description: 'Pilot your starship through alien armadas. Upgrade lasers, collect shields, and defeat giant bosses.',
-    category: 'Arcade',
-    plays: 140000,
-    rating: 4.8
-  },
-  {
-    slug: 'traffic-rush',
-    title: 'Traffic Rush',
-    tagline: 'Control highway signals to prevent crashes.',
-    description: 'Tap vehicles and traffic lights to guide busy intersection traffic safely without collisions.',
-    category: 'Casual',
-    plays: 95000,
-    rating: 4.6
-  },
-  {
-    slug: 'dual-arena',
-    title: 'Dual Arena',
-    tagline: 'Local 2-player tank battle duel.',
-    description: 'Outmaneuver your friend in a top-down maze arena. Bounce shots off walls to destroy the rival tank.',
-    category: '2 Player',
-    plays: 105000,
-    rating: 4.8
-  },
-  {
-    slug: 'neon-wings',
-    title: 'Neon Wings',
-    tagline: 'Flappy-style cyber bird cave runner.',
-    description: 'Tap to flap through neon laser pillars and narrow cavern gaps. How far can you fly?',
-    category: 'Arcade',
-    plays: 118000,
-    rating: 4.7
-  },
-  {
-    slug: 'tower-defense',
-    title: 'Tower Defense',
-    tagline: 'Tactical turret deployment strategy.',
-    description: 'Place laser, plasma, and frost towers along the path to stop waves of enemy bots.',
-    category: 'Strategy',
-    plays: 125000,
-    rating: 4.8
-  },
-  {
-    slug: 'mini-golf',
-    title: 'Mini Golf',
-    tagline: 'Precision 3D/2D putting green physics.',
-    description: 'Bank shots around obstacles, ramps, and wind traps to sink hole-in-one putts.',
-    category: 'Sports',
-    plays: 110000,
-    rating: 4.7
-  }
-];
-
-const CATEGORIES = [
-  { slug: 'racing', name: 'Racing' },
-  { slug: 'sports', name: 'Sports' },
-  { slug: 'puzzle', name: 'Puzzle' },
-  { slug: 'action', name: 'Action' },
-  { slug: 'arcade', name: 'Arcade' },
-  { slug: 'strategy', name: 'Strategy' },
-  { slug: 'board', name: 'Board' },
-  { slug: 'trivia', name: 'Trivia' },
-  { slug: 'casual', name: 'Casual' },
-  { slug: 'multiplayer', name: 'Multiplayer' },
-  { slug: '2-player', name: '2 Player' }
-];
-
 const LANDING_PAGES = [
-  { path: '/online-games', title: 'Play Free Online Games Instantly — No Downloads | ManuPlay', desc: 'Play top free online games instantly on ManuPlay. No downloads, zero ads, instant action.' },
+  { path: '/online-games', title: 'Play Free Online Games Instantly — No Downloads | ManuPlay', desc: 'Play top free online games instantly on ManuPlay. No downloads, zero ads, instant action on mobile and desktop.' },
   { path: '/free-games', title: 'Free Web Games — Play 100+ Instant Games | ManuPlay', desc: 'Discover free web games on ManuPlay. Play top-rated browser games with zero downloads.' },
   { path: '/multiplayer-games', title: 'Free Multiplayer Browser Games — Play Online With Friends | ManuPlay', desc: 'Play free multiplayer browser games online on ManuPlay. Challenge friends in Chess, 8 Ball Pool, and Kart Racing.' },
   { path: '/2-player-games', title: '2 Player Games — Play 2 Player Web Games Free | ManuPlay', desc: 'Play the best free 2 player games online on ManuPlay. Challenge a friend on the same device.' },
@@ -213,7 +26,7 @@ const LEGAL_PAGES = [
 
 function getCanonical(routePath: string): string {
   const clean = routePath.startsWith('/') ? routePath : `/${routePath}`;
-  const trimmed = clean === '/' ? '' : clean.replace(/\/+$/, '');
+  const trimmed = clean === '/' ? '/' : clean.replace(/\/+$/, '');
   return `${SITE_DOMAIN}${trimmed}`;
 }
 
@@ -249,12 +62,12 @@ async function runPrerender() {
   // Root
   routes.push({
     path: '/',
-    title: 'ManuPlay — Free Online Games to Play Instantly',
+    title: 'Free Online Games – Play Browser Games Instantly | ManuPlay',
     description: 'Discover and play 100+ top free online browser games instantly on ManuPlay. No downloads, zero ads, instant action on mobile and desktop.',
     changefreq: 'daily',
     priority: '1.0',
-    h1: 'ManuPlay — Free Instant Mobile & Browser Games',
-    contentHtml: `<header><h1>ManuPlay — Free Instant Mobile & Browser Games</h1><p>Play 100+ free instant online browser games on ManuPlay.</p></header>`
+    h1: 'Free Online Games',
+    contentHtml: `<header><h1>Free Online Games</h1><p>Play 100+ free instant online browser games on ManuPlay.</p></header>`
   });
 
   // Catalog /games
@@ -280,27 +93,103 @@ async function runPrerender() {
   });
 
   // Category Pages
-  CATEGORIES.forEach(cat => {
+  CATEGORIES_LIST.forEach(cat => {
+    const catCanonical = getCanonical(`/category/${cat.slug}`);
+    const categoryGames = GAMES_CATALOG.filter(g => g.category.toLowerCase() === cat.name.toLowerCase() || g.tags.some(t => t.toLowerCase() === cat.slug));
+    const gameLinks = categoryGames.map(g => `<li><a href="/games/${g.slug}"><strong>${g.title}</strong></a> - ${g.tagline}</li>`).join('');
+
+    const jsonLd = [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': `${SITE_DOMAIN}/` },
+          { '@type': 'ListItem', 'position': 2, 'name': 'Games', 'item': `${SITE_DOMAIN}/games` },
+          { '@type': 'ListItem', 'position': 3, 'name': `${cat.name} Games`, 'item': catCanonical }
+        ]
+      }
+    ];
+
     routes.push({
       path: `/category/${cat.slug}`,
-      title: `${cat.name} Games — Play Free Online | ManuPlay`,
+      title: `${cat.name} Games Online – Play Free | ManuPlay`,
       description: `Play the best free online ${cat.name.toLowerCase()} games on ManuPlay. Enjoy fast instant-play browser games with high score saving on mobile and desktop.`,
       changefreq: 'weekly',
       priority: '0.8',
       h1: `Free ${cat.name} Games`,
-      contentHtml: `<article><h1>Free ${cat.name} Games</h1><p>Discover top free ${cat.name.toLowerCase()} browser games ready to play on ManuPlay.</p></article>`
+      contentHtml: `
+        <article>
+          <header>
+            <nav><a href="/">Home</a> &gt; <a href="/games">Games</a> &gt; <span>${cat.name} Games</span></nav>
+            <h1>Free ${cat.name} Games</h1>
+            <p>Discover top free ${cat.name.toLowerCase()} browser games ready to play on ManuPlay.</p>
+          </header>
+          <section>
+            <h2>Popular ${cat.name} Games (${categoryGames.length})</h2>
+            <ul>${gameLinks}</ul>
+          </section>
+          <section>
+            <h2>Why Play ${cat.name} Games on ManuPlay?</h2>
+            <p>ManuPlay provides zero-friction instant browser gaming for ${cat.name.toLowerCase()} enthusiasts worldwide. All games are lightweight, optimized for high FPS performance across smartphones, tablets, and desktop browsers, and save your progress automatically.</p>
+          </section>
+        </article>
+      `,
+      jsonLd
     });
   });
 
-  // Individual Games
-  GAMES.forEach(game => {
+  // Individual Games (Consuming single source of truth GAMES_CATALOG with full rich content)
+  GAMES_CATALOG.forEach(game => {
+    const gameCanonical = getCanonical(`/games/${game.slug}`);
+    
+    const howToPlayList = game.howToPlay && game.howToPlay.length > 0 ? game.howToPlay : [
+      `Launch ${game.title} directly in your browser by clicking START GAME.`,
+      `Review the controls: Desktop uses keyboard/mouse, Mobile uses responsive touch buttons.`,
+      `Score points, complete objectives, beat your local high score, and earn ManuCoins!`
+    ];
+
+    const featuresList = game.features && game.features.length > 0 ? game.features : [
+      'Instant free browser play with zero install',
+      'Responsive touch & keyboard control scheme',
+      'Local high score and progress save system',
+      'Earn ManuCoins and level up your player profile',
+      'High performance lightweight HTML5 engine'
+    ];
+
+    const faqsList = game.faqs && game.faqs.length > 0 ? game.faqs : [
+      {
+        question: `Is ${game.title} free to play online?`,
+        answer: `Yes! ${game.title} is 100% free to play directly on ManuPlay without any downloads or mandatory registration.`
+      },
+      {
+        question: `Can I play ${game.title} on my phone or tablet?`,
+        answer: `Yes, ${game.title} is fully optimized for mobile touchscreens (iOS and Android) as well as desktop browsers.`
+      },
+      {
+        question: `Does ${game.title} save my progress and high score?`,
+        answer: `Yes, ManuPlay automatically saves your personal best score, coin earnings, and progression locally.`
+      }
+    ];
+
+    const relatedGames = GAMES_CATALOG
+      .filter(g => g.id !== game.id)
+      .sort((a, b) => (b.category === game.category ? 2 : 0) - (a.category === game.category ? 2 : 0) || (b.rating - a.rating))
+      .slice(0, 4);
+
+    const controlsMobileHtml = game.controls.mobile.map(c => `<li>${c}</li>`).join('');
+    const controlsDesktopHtml = game.controls.desktop.map(c => `<li>${c}</li>`).join('');
+    const howToPlayHtml = howToPlayList.map(step => `<li>${step}</li>`).join('');
+    const featuresHtml = featuresList.map(feat => `<li>${feat}</li>`).join('');
+    const faqsHtml = faqsList.map(faq => `<article><h3>${faq.question}</h3><p>${faq.answer}</p></article>`).join('');
+    const relatedGamesHtml = relatedGames.map(g => `<li><a href="/games/${g.slug}">${g.title}</a> - Free online ${g.category.toLowerCase()} game.</li>`).join('');
+
     const jsonLd = [
       {
         '@context': 'https://schema.org',
         '@type': 'VideoGame',
         'name': game.title,
         'description': game.description,
-        'url': getCanonical(`/games/${game.slug}`),
+        'url': gameCanonical,
         'image': DEFAULT_OG_IMAGE,
         'genre': game.category,
         'gamePlatform': ['Web Browser', 'Mobile Browser', 'Desktop Browser'],
@@ -309,7 +198,7 @@ async function runPrerender() {
         'author': {
           '@type': 'Organization',
           'name': SITE_NAME,
-          'url': SITE_DOMAIN
+          'url': `${SITE_DOMAIN}/`
         },
         'offers': {
           '@type': 'Offer',
@@ -317,12 +206,22 @@ async function runPrerender() {
           'priceCurrency': 'USD',
           'availability': 'https://schema.org/InStock'
         }
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': `${SITE_DOMAIN}/` },
+          { '@type': 'ListItem', 'position': 2, 'name': 'Games', 'item': `${SITE_DOMAIN}/games` },
+          { '@type': 'ListItem', 'position': 3, 'name': game.category, 'item': `${SITE_DOMAIN}/category/${game.category.toLowerCase()}` },
+          { '@type': 'ListItem', 'position': 4, 'name': game.title, 'item': gameCanonical }
+        ]
       }
     ];
 
     routes.push({
       path: `/games/${game.slug}`,
-      title: `Play ${game.title} Online Free | ManuPlay`,
+      title: `${game.title} – Play Online Free | ManuPlay`,
       description: `Play ${game.title} online for free on ManuPlay. ${game.description} Play instantly in your mobile or desktop web browser with zero downloads.`,
       changefreq: 'weekly',
       priority: '0.8',
@@ -339,8 +238,31 @@ async function runPrerender() {
             <p>${game.description}</p>
           </section>
           <section>
-            <h2>How to Play</h2>
-            <p>Click START GAME to launch the game directly in your browser. Use touch controls on mobile or keyboard on desktop.</p>
+            <h2>How to Play ${game.title}</h2>
+            <ol>${howToPlayHtml}</ol>
+          </section>
+          <section>
+            <h2>Game Controls</h2>
+            <div>
+              <h3>Touch Controls (Mobile & Tablet)</h3>
+              <ul>${controlsMobileHtml}</ul>
+            </div>
+            <div>
+              <h3>Keyboard & Mouse Controls (Desktop)</h3>
+              <ul>${controlsDesktopHtml}</ul>
+            </div>
+          </section>
+          <section>
+            <h2>Key Features</h2>
+            <ul>${featuresHtml}</ul>
+          </section>
+          <section>
+            <h2>Frequently Asked Questions</h2>
+            ${faqsHtml}
+          </section>
+          <section>
+            <h2>More Free ${game.category} Games</h2>
+            <ul>${relatedGamesHtml}</ul>
           </section>
         </article>
       `,
@@ -350,6 +272,20 @@ async function runPrerender() {
 
   // Landing Pages
   LANDING_PAGES.forEach(lp => {
+    const lpCanonical = getCanonical(lp.path);
+    const gamesListHtml = GAMES_CATALOG.slice(0, 10).map(g => `<li><a href="/games/${g.slug}"><strong>${g.title}</strong></a> (${g.category}) - ${g.tagline}</li>`).join('');
+
+    const jsonLd = [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': `${SITE_DOMAIN}/` },
+          { '@type': 'ListItem', 'position': 2, 'name': lp.title.split('—')[0].trim(), 'item': lpCanonical }
+        ]
+      }
+    ];
+
     routes.push({
       path: lp.path,
       title: lp.title,
@@ -357,7 +293,43 @@ async function runPrerender() {
       changefreq: 'weekly',
       priority: '0.9',
       h1: lp.title.split('—')[0].trim(),
-      contentHtml: `<article><h1>${lp.title.split('—')[0].trim()}</h1><p>${lp.desc}</p></article>`
+      contentHtml: `
+        <article>
+          <header>
+            <nav><a href="/">Home</a> &gt; <span>${lp.title.split('—')[0].trim()}</span></nav>
+            <h1>${lp.title.split('—')[0].trim()}</h1>
+            <p>${lp.desc}</p>
+          </header>
+          <section>
+            <h2>Top Recommended Web Games</h2>
+            <ul>${gamesListHtml}</ul>
+          </section>
+        </article>
+      `,
+      jsonLd
+    });
+  });
+
+  // Blog Pages & Articles
+  routes.push({
+    path: '/blog',
+    title: 'Gaming Guides, Tips & News | ManuPlay Blog',
+    description: 'Read the latest gaming guides, tips, high-score strategies, and browser gaming news on ManuPlay.',
+    changefreq: 'weekly',
+    priority: '0.7',
+    h1: 'ManuPlay Gaming Blog',
+    contentHtml: `<article><h1>ManuPlay Gaming Blog</h1><p>Gaming guides and tips for online browser games.</p></article>`
+  });
+
+  BLOG_POSTS.forEach(post => {
+    routes.push({
+      path: `/blog/${post.slug}`,
+      title: `${post.title} | ManuPlay Blog`,
+      description: post.excerpt,
+      changefreq: 'monthly',
+      priority: '0.7',
+      h1: post.title,
+      contentHtml: `<article><h1>${post.title}</h1><p>${post.excerpt}</p></article>`
     });
   });
 
@@ -393,7 +365,6 @@ ${routes.map(r => `  <url>
   for (const route of routes) {
     const canonicalUrl = getCanonical(route.path);
 
-    // Modify HTML template tags
     let html = templateHtml;
 
     // Replace Title

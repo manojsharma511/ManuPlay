@@ -19,12 +19,15 @@ export const GameDetailPage: React.FC = () => {
   const [saveState, setSaveState] = useState<SavedGameState | null>(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
+
+  useEffect(() => {
     if (game) {
       setIsFav(storageService.isFavorite(game.id));
       storageService.loadGameState(game.id).then(setSaveState);
-      window.scrollTo(0, 0);
     }
-  }, [game, slug]);
+  }, [slug, game]);
 
   if (!game) return <NotFoundPage />;
 
@@ -49,7 +52,7 @@ export const GameDetailPage: React.FC = () => {
       
       {/* Dynamic Comprehensive Technical SEO */}
       <SEO
-        title={game.seoTitle || `Play ${game.title} Online Free`}
+        title={game.seoTitle || `${game.title} – Play Online Free`}
         description={game.seoDescription || game.description}
         path={`/games/${game.slug}`}
         type="game"
@@ -74,10 +77,13 @@ export const GameDetailPage: React.FC = () => {
           className="relative w-full aspect-[16/9] sm:aspect-[21/9] rounded-2xl overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-inner"
           style={{ background: game.thumbnailBg }}
         >
-          <div className="p-4 rounded-2xl bg-slate-950/40 backdrop-blur-md border border-white/20 text-white shadow-2xl mb-2">
+          {game.coverImage && (
+            <img src={game.coverImage} alt={game.title} className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-overlay" />
+          )}
+          <div className="relative z-10 p-4 rounded-2xl bg-slate-950/40 backdrop-blur-md border border-white/20 text-white shadow-2xl mb-2">
             <Zap className="w-12 h-12" />
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-white drop-shadow-md tracking-tight">
+          <h1 className="relative z-10 text-3xl sm:text-5xl font-black text-white drop-shadow-md tracking-tight">
             {game.title}
           </h1>
           <p className="text-xs sm:text-sm text-slate-100 font-semibold max-w-lg mt-1 drop-shadow">

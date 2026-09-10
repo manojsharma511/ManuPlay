@@ -165,16 +165,23 @@ export const GameShell: React.FC<GameShellProps> = ({ game }) => {
     };
   };
 
-  const handleStartGame = () => {
+  const [currentConfig, setCurrentConfig] = useState<{ overs?: number } | undefined>(undefined);
+
+  const handleStartGame = (config?: { overs?: number }) => {
     setShowReadyScreen(false);
+    if (config) {
+      setCurrentConfig(config);
+    }
     if (!storageService.isTutorialCompleted(game.id) && GAME_TUTORIALS[game.id]) {
       setShowTutorial(true);
     }
-    startGameEngine();
+    startGameEngine(config);
   };
 
-  const startGameEngine = async () => {
+  const startGameEngine = async (config?: { overs?: number }) => {
     if (!canvasRef.current) return;
+
+    const activeConfig = config || currentConfig;
 
     try {
       if (gameInstanceRef.current) {
@@ -201,7 +208,7 @@ export const GameShell: React.FC<GameShellProps> = ({ game }) => {
       }
 
       gameInstanceRef.current = new GameEngineClass(handleGameOver, handleScoreUpdate);
-      gameInstanceRef.current.init(canvasRef.current);
+      gameInstanceRef.current.init(canvasRef.current, activeConfig);
     } catch (err) {
       console.error('Failed to initialize game engine:', err);
       setHasLoadError(true);
@@ -240,8 +247,24 @@ export const GameShell: React.FC<GameShellProps> = ({ game }) => {
     if (gameInstanceRef.current) {
       gameInstanceRef.current.destroy();
     }
-    startGameEngine();
+    if (game.id === 'cricket-smash') {
+      setShowReadyScreen(true);
+    } else {
+      startGameEngine();
+    }
   };
+
+  const handleReconfigureMatch = () => {
+    setIsPaused(false);
+    setIsGameOver(false);
+    setShowReadyScreen(true);
+    setScore(0);
+    if (gameInstanceRef.current) {
+      gameInstanceRef.current.destroy();
+    }
+  };
+
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
 
   return (
     <div
@@ -250,10 +273,34 @@ export const GameShell: React.FC<GameShellProps> = ({ game }) => {
     >
       <AchievementModal />
 
+      {/* Exit Confirmation Modal */}
+      {showExitConfirmModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-fadeIn">
+          <div className="w-full max-w-sm rounded-3xl bg-slate-900 border border-slate-800 p-6 text-center space-y-4 shadow-2xl">
+            <h3 className="text-xl font-extrabold text-white">Exit {game.title}?</h3>
+            <p className="text-xs text-slate-400">Are you sure you want to exit to the games catalog?</p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowExitConfirmModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs cursor-pointer"
+              >
+                CONTINUE PLAYING
+              </button>
+              <button
+                onClick={() => navigate('/games')}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600/20 border border-rose-500/40 text-rose-300 font-bold text-xs hover:bg-rose-600/30 cursor-pointer"
+              >
+                EXIT GAME
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Header Controls */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-slate-950/90 via-slate-950/40 to-transparent pointer-events-auto">
         <button
-          onClick={() => navigate('/games')}
+          onClick={() => setShowExitConfirmModal(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 text-xs font-bold hover:text-white backdrop-blur-md active:scale-95 transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Exit
@@ -263,12 +310,27 @@ export const GameShell: React.FC<GameShellProps> = ({ game }) => {
           <span className="font-extrabold text-xs sm:text-sm text-white px-2 py-1 rounded-lg bg-slate-900/60 border border-slate-800 backdrop-blur-md">
             {game.title}
           </span>
+          {game.hasLevels && (
+            <span className="font-mono font-bold text-xs text-emerald-400 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+              LVL 100
+            </span>
+          )}
           <span className="font-mono font-bold text-xs text-cyan-400 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
             {score.toLocaleString()}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
+          {!showReadyScreen && !isPaused && !isGameOver && (
+            <button
+              onClick={handlePause}
+              className="px-3 py-1.5 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold hover:bg-cyan-500/30 active:scale-95 transition-all cursor-pointer"
+              aria-label="Pause Game"
+            >
+              PAUSE
+            </button>
+          )}
+
           <button
             onClick={() => setIsHowToPlayOpen(true)}
             className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-200 hover:text-white backdrop-blur-md active:scale-95 transition-all cursor-pointer"
@@ -388,6 +450,7 @@ export const GameShell: React.FC<GameShellProps> = ({ game }) => {
             score={score}
             gameId={game.id}
             onRestart={handleRestart}
+            onReconfigure={handleReconfigureMatch}
             onMoreGames={() => navigate('/games')}
             onHome={() => navigate('/')}
           />

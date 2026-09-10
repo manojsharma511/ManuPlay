@@ -17,10 +17,10 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-slate-950/90 border-t border-slate-800/80 text-slate-400 text-xs mt-16 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-10">
-        
+
         {/* Top Brand Grid */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-          
+
           {/* Brand Intro */}
           <div className="md:col-span-2 space-y-4">
             <Link to="/" className="inline-flex items-center gap-2 text-white text-xl font-black tracking-tight">
@@ -45,8 +45,8 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2">
               {CATEGORIES_LIST.slice(0, 7).map(cat => (
                 <li key={cat.slug}>
-                  <Link 
-                    to={`/category/${cat.slug}`} 
+                  <Link
+                    to={`/category/${cat.slug}`}
                     className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
                   >
                     <span>{cat.name} Games</span>
@@ -67,8 +67,8 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2">
               {landingPages.map(lp => (
                 <li key={lp.slug}>
-                  <Link 
-                    to={lp.slug} 
+                  <Link
+                    to={lp.slug}
                     className="hover:text-cyan-400 transition-colors"
                   >
                     {lp.title}
@@ -88,8 +88,18 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/blog" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-slate-500" /> Gaming Guides & Blog
+                </Link>
+              </li>
+              <li>
                 <Link to="/contact" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-slate-500" /> Contact Support
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-cyan-400 font-semibold hover:underline flex items-center gap-1.5">
+                  <Heart className="w-3.5 h-3.5 text-rose-400" /> Send Game Feedback
                 </Link>
               </li>
               <li>

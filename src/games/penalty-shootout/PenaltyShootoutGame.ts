@@ -24,10 +24,13 @@ export class PenaltyShootoutGame {
   private isBallInFlight = false;
   private ballVx = 0;
   private ballVy = 0;
+  private ballScale = 1;
 
-  // Goalkeeper AI State
+  // Goalkeeper AI State & Dive Animation
   private keeperX = 200;
+  private keeperY = 150;
   private keeperTargetX = 200;
+  private keeperState: 'idle' | 'diveLeft' | 'diveRight' = 'idle';
 
   // Touch Aim State
   private isAiming = false;
@@ -37,6 +40,7 @@ export class PenaltyShootoutGame {
   private aimCurrentY = 0;
 
   private resultFxText = '';
+  private fxTimer = 0;
 
   constructor(
     onGameOver: (score: number) => void,
@@ -57,6 +61,7 @@ export class PenaltyShootoutGame {
     this.shotsTaken = 0;
     this.goalsScored = 0;
     this.score = 0;
+    this.resultFxText = '';
     this.resetBall();
 
     this.isRunning = true;
@@ -99,8 +104,11 @@ export class PenaltyShootoutGame {
   private resetBall() {
     this.ballX = this.logicalWidth / 2;
     this.ballY = this.logicalHeight - 120;
+    this.ballScale = 1;
     this.isBallInFlight = false;
     this.keeperX = this.logicalWidth / 2;
+    this.keeperY = 150;
+    this.keeperState = 'idle';
   }
 
   private setupTouch() {
@@ -138,11 +146,13 @@ export class PenaltyShootoutGame {
 
       if (dy < -20) {
         this.isBallInFlight = true;
-        this.ballVx = dx * 1.5;
-        this.ballVy = dy * 1.5;
+        this.ballVx = dx * 1.6;
+        this.ballVy = dy * 1.6;
 
-        // Keeper dives left or right randomly
-        this.keeperTargetX = this.logicalWidth / 2 + (Math.random() - 0.5) * 160;
+        // Keeper dives left or right
+        const diveDir = Math.random() < 0.5 ? -1 : 1;
+        this.keeperTargetX = this.logicalWidth / 2 + diveDir * (80 + Math.random() * 60);
+        this.keeperState = diveDir < 0 ? 'diveLeft' : 'diveRight';
 
         audioService.playJump();
         storageService.triggerHaptic('light');
@@ -187,11 +197,14 @@ export class PenaltyShootoutGame {
   };
 
   private update() {
+    if (this.fxTimer > 0) this.fxTimer -= 0.02;
+
     if (this.isBallInFlight) {
       this.ballX += this.ballVx * 0.03;
       this.ballY += this.ballVy * 0.03;
+      this.ballScale = Math.max(0.6, 1 - ( (this.logicalHeight - 120 - this.ballY) / 600 ));
 
-      this.keeperX += (this.keeperTargetX - this.keeperX) * 0.1;
+      this.keeperX += (this.keeperTargetX - this.keeperX) * 0.15;
 
       // Ball reached goal line
       if (this.ballY <= 150) {
@@ -199,17 +212,19 @@ export class PenaltyShootoutGame {
         const goalLeft = this.logicalWidth / 2 - 100;
         const goalRight = this.logicalWidth / 2 + 100;
 
-        const isSaved = Math.hypot(this.ballX - this.keeperX, this.ballY - 150) < 35;
+        const isSaved = Math.hypot(this.ballX - this.keeperX, this.ballY - 150) < 42;
         const isGoal = this.ballX >= goalLeft && this.ballX <= goalRight && !isSaved;
 
         if (isGoal) {
           this.goalsScored++;
           this.score += 500;
-          this.resultFxText = '⚽ GOAL!';
+          this.resultFxText = '⚽ GOAL! MAGNIFICENT SHOT!';
+          this.fxTimer = 1.2;
           audioService.playCoin();
           storageService.triggerHaptic('success');
         } else {
           this.resultFxText = isSaved ? '🧤 SAVED BY KEEPER!' : '❌ MISSED GOAL!';
+          this.fxTimer = 1.2;
           audioService.playExplosion();
           storageService.triggerHaptic('error');
         }
@@ -238,55 +253,90 @@ export class PenaltyShootoutGame {
     const w = this.logicalWidth;
     const h = this.logicalHeight;
 
-    // Grass Field Background
-    ctx.fillStyle = '#0a2e18';
+    // Grass Field Stadium Radial Gradient
+    const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 40, w / 2, h / 2, h * 0.7);
+    bgGrad.addColorStop(0, '#15803d');
+    bgGrad.addColorStop(1, '#052e16');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // Goal Post Framing
+    // Goal Post Framing & Netting Grid
     const goalW = 220;
+    const goalH = 100;
     const goalX = (w - goalW) / 2;
+    const goalY = 80;
+
+    // Goal Netting
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    for (let x = goalX; x <= goalX + goalW; x += 15) {
+      ctx.beginPath(); ctx.moveTo(x, goalY); ctx.lineTo(x, goalY + goalH); ctx.stroke();
+    }
+    for (let y = goalY; y <= goalY + goalH; y += 15) {
+      ctx.beginPath(); ctx.moveTo(goalX, y); ctx.lineTo(goalX + goalW, y); ctx.stroke();
+    }
+
+    // Goal Posts
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 6;
-    ctx.strokeRect(goalX, 80, goalW, 100);
+    ctx.strokeRect(goalX, goalY, goalW, goalH);
 
-    // Goalkeeper AI
-    ctx.save();
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = '#ff0055';
-    ctx.fillStyle = '#ff0055';
+    // Penalty Spot Circle Mark
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.beginPath();
-    ctx.arc(this.keeperX, 150, 20, 0, Math.PI * 2);
+    ctx.arc(w / 2, h - 120, 8, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
 
-    // Touch Drag Aim Line Preview
+    // Render Goalkeeper Avatar & Diving Arms
+    this.renderGoalkeeper(this.keeperX, this.keeperY);
+
+    // Touch Drag Aim Target Reticle & Line
     if (this.isAiming) {
+      const targetX = this.ballX + (this.aimCurrentX - this.aimStartX);
+      const targetY = this.ballY + (this.aimCurrentY - this.aimStartY);
+
       ctx.save();
       ctx.strokeStyle = '#00f0ff';
       ctx.lineWidth = 4;
-      ctx.setLineDash([8, 8]);
+      ctx.setLineDash([6, 6]);
       ctx.beginPath();
       ctx.moveTo(this.ballX, this.ballY);
-      ctx.lineTo(this.ballX + (this.aimCurrentX - this.aimStartX), this.ballY + (this.aimCurrentY - this.aimStartY));
+      ctx.lineTo(targetX, targetY);
+      ctx.stroke();
+
+      // Aim Reticle
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(targetX, targetY, 18, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
 
-    // Football
+    // Render Football
     ctx.save();
+    ctx.translate(this.ballX, this.ballY);
+    ctx.scale(this.ballScale, this.ballScale);
     ctx.shadowBlur = 15;
     ctx.shadowColor = '#ffffff';
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(this.ballX, this.ballY, 14, 0, Math.PI * 2);
+    ctx.arc(0, 0, 15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Football Pentagons
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(0, 0, 6, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // Result Text
-    if (this.resultFxText) {
+    // Result Text Overlay Banner
+    if (this.fxTimer > 0) {
       ctx.save();
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 24px sans-serif';
+      ctx.font = '900 24px sans-serif';
       ctx.textAlign = 'center';
       ctx.shadowBlur = 20;
       ctx.shadowColor = '#00f0ff';
@@ -294,11 +344,55 @@ export class PenaltyShootoutGame {
       ctx.restore();
     }
 
-    // HUD
+    // HUD Header Banner
     ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    ctx.fillRect(10, 35, w - 20, 35);
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(10, 35, w - 20, 35);
+
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(`⚽ SHOTS: ${this.shotsTaken}/${this.maxShots}   GOALS: ${this.goalsScored}`, 20, 40);
+    ctx.font = '900 14px sans-serif';
+    ctx.fillText(`⚽ SHOTS: ${this.shotsTaken}/${this.maxShots}   GOALS: ${this.goalsScored}`, 20, 58);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '700 11px sans-serif';
+    ctx.fillText('SWIPE / DRAG BALL UPWARD TOWARD GOAL CORNERS TO SHOOT', w / 2, h - 25);
+    ctx.restore();
+  }
+
+  private renderGoalkeeper(x: number, y: number) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Keeper Jersey Body
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(-12, -10, 24, 25);
+
+    // Keeper Head / Cap
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(0, -18, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outstretched Diving Arms & Gloves
+    ctx.fillStyle = '#ffffff';
+    if (this.keeperState === 'diveLeft') {
+      ctx.fillRect(-30, -15, 18, 8); // Left arm outstretched
+      ctx.fillRect(10, -5, 14, 8);
+    } else if (this.keeperState === 'diveRight') {
+      ctx.fillRect(-22, -5, 14, 8);
+      ctx.fillRect(12, -15, 18, 8); // Right arm outstretched
+    } else {
+      ctx.fillRect(-24, -8, 12, 8);
+      ctx.fillRect(12, -8, 12, 8);
+    }
+
     ctx.restore();
   }
 }
